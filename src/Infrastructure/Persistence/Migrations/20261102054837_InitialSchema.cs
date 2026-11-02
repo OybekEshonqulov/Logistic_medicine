@@ -50,8 +50,7 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
-                    parent_id = table.Column<Guid>(type: "uuid", nullable: true),
-                    type = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    code = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     name_uz = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
                     name_ru = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
                     is_active = table.Column<bool>(type: "boolean", nullable: false),
@@ -61,12 +60,6 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("pk_regions", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_regions_regions_parent_id",
-                        column: x => x.parent_id,
-                        principalTable: "regions",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -111,23 +104,24 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "dealers",
+                name: "districts",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
-                    name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    phone = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     region_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    address = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    code = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
+                    type = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    name_uz = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
+                    name_ru = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
                     is_active = table.Column<bool>(type: "boolean", nullable: false),
                     created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     updated_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_dealers", x => x.id);
+                    table.PrimaryKey("pk_districts", x => x.id);
                     table.ForeignKey(
-                        name: "fk_dealers_regions_region_id",
+                        name: "fk_districts_regions_region_id",
                         column: x => x.region_id,
                         principalTable: "regions",
                         principalColumn: "id",
@@ -182,6 +176,90 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "dealers",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    phone = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    region_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    district_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    address = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    is_active = table.Column<bool>(type: "boolean", nullable: false),
+                    created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_dealers", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_dealers_districts_district_id",
+                        column: x => x.district_id,
+                        principalTable: "districts",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_dealers_regions_region_id",
+                        column: x => x.region_id,
+                        principalTable: "regions",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "receipt_items",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    receipt_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    batch_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    quantity = table.Column<int>(type: "integer", nullable: false),
+                    unit_price = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_receipt_items", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_receipt_items_batches_batch_id",
+                        column: x => x.batch_id,
+                        principalTable: "batches",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_receipt_items_receipts_receipt_id",
+                        column: x => x.receipt_id,
+                        principalTable: "receipts",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "dealer_district",
+                columns: table => new
+                {
+                    dealer_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    district_id = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_dealer_district", x => new { x.dealer_id, x.district_id });
+                    table.ForeignKey(
+                        name: "fk_dealer_district_dealers_dealer_id",
+                        column: x => x.dealer_id,
+                        principalTable: "dealers",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "fk_dealer_district_districts_district_id",
+                        column: x => x.district_id,
+                        principalTable: "districts",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "dealer_region",
                 columns: table => new
                 {
@@ -212,6 +290,7 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     region_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    district_id = table.Column<Guid>(type: "uuid", nullable: true),
                     address = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
                     phone = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     status = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
@@ -227,6 +306,12 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
                         name: "fk_pharmacies_dealers_requested_by_dealer_id",
                         column: x => x.requested_by_dealer_id,
                         principalTable: "dealers",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_pharmacies_districts_district_id",
+                        column: x => x.district_id,
+                        principalTable: "districts",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
@@ -281,35 +366,6 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
                         column: x => x.dealer_id,
                         principalTable: "dealers",
                         principalColumn: "id");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "receipt_items",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    receipt_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    batch_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    quantity = table.Column<int>(type: "integer", nullable: false),
-                    unit_price = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
-                    created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    updated_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_receipt_items", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_receipt_items_batches_batch_id",
-                        column: x => x.batch_id,
-                        principalTable: "batches",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "fk_receipt_items_receipts_receipt_id",
-                        column: x => x.receipt_id,
-                        principalTable: "receipts",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -690,14 +746,36 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "ix_dealer_district_district_id",
+                table: "dealer_district",
+                column: "district_id");
+
+            migrationBuilder.CreateIndex(
                 name: "ix_dealer_region_region_id",
                 table: "dealer_region",
                 column: "region_id");
 
             migrationBuilder.CreateIndex(
+                name: "ix_dealers_district_id",
+                table: "dealers",
+                column: "district_id");
+
+            migrationBuilder.CreateIndex(
                 name: "ix_dealers_region_id",
                 table: "dealers",
                 column: "region_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_districts_code",
+                table: "districts",
+                column: "code",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "ix_districts_region_id_name_uz",
+                table: "districts",
+                columns: new[] { "region_id", "name_uz" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "ix_notifications_user_id_dedup_key",
@@ -709,6 +787,11 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
                 name: "ix_notifications_user_id_read_at",
                 table: "notifications",
                 columns: new[] { "user_id", "read_at" });
+
+            migrationBuilder.CreateIndex(
+                name: "ix_pharmacies_district_id",
+                table: "pharmacies",
+                column: "district_id");
 
             migrationBuilder.CreateIndex(
                 name: "ix_pharmacies_region_id",
@@ -759,9 +842,16 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
                 column: "user_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_regions_parent_id",
+                name: "ix_regions_code",
                 table: "regions",
-                column: "parent_id");
+                column: "code",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "ix_regions_name_uz",
+                table: "regions",
+                column: "name_uz",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "ix_sale_item_batches_batch_id",
@@ -910,6 +1000,9 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
                 name: "audit_logs");
 
             migrationBuilder.DropTable(
+                name: "dealer_district");
+
+            migrationBuilder.DropTable(
                 name: "dealer_region");
 
             migrationBuilder.DropTable(
@@ -977,6 +1070,9 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "dealers");
+
+            migrationBuilder.DropTable(
+                name: "districts");
 
             migrationBuilder.DropTable(
                 name: "regions");

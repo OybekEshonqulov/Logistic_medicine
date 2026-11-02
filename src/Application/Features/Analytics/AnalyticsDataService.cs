@@ -1,20 +1,15 @@
 using Microsoft.EntityFrameworkCore;
 using PharmaTrack.Application.Common;
-using PharmaTrack.Domain.Entities;
 using PharmaTrack.Domain.Enums;
 
 namespace PharmaTrack.Application.Features.Analytics;
 
-public sealed record SalesFact(DateOnly Date, Guid DealerId, Guid PharmacyId, Guid RegionId, Guid ProductId, int Units, decimal Amount, decimal Cost);
+public sealed record SalesFact(DateOnly Date, Guid DealerId, Guid PharmacyId, Guid RegionId, Guid? DistrictId, Guid ProductId, int Units, decimal Amount, decimal Cost);
 public sealed record StockFact(Guid LocationId, string LocationName, Guid? DealerId, Guid ProductId, Guid BatchId, string BatchNumber, DateOnly ExpiryDate, int Units, decimal UnitCost)
 {
     public decimal Value => Units * UnitCost;
 }
 public sealed record TransitFact(Guid? DealerId, Guid ProductId, int Units, decimal Value);
-public sealed record RegionInfo(Guid Id, Guid? ParentId, string NameUz, string NameRu)
-{
-    public Guid ProvinceId => ParentId ?? Id;
-}
 
 /// <summary>
 /// Loads compact facts that the reports then aggregate in memory. Every report therefore counts
@@ -35,19 +30,16 @@ public sealed class AnalyticsDataService(IAppDbContext db, ICurrentUser currentU
         return from <= to ? new Period(from, to) : new Period(to, from);
     }
 
-    public async Task<IReadOnlyDictionary<Guid, RegionInfo>> RegionsAsync(CancellationToken ct) =>
-        await db.Regions.AsNoTracking()
-            .Select(r => new RegionInfo(r.Id, r.ParentId, r.NameUz, r.NameRu))
-            .ToDictionaryAsync(r => r.Id, ct);
-
-    /// <summary>Net sales: active sales minus approved pharmacy returns, attributed to the pharmacy's region.</summary>
-    public async Task<List<SalesFact>> SalesAsync(AnalyticsFilter filter, Period period, IReadOnlyDictionary<Guid, RegionInfo> regions, CancellationToken ct)
+    /// <summary>Net sales: active sales minus approved pharmacy returns, attributed to the pharmacy's address.</summary>
+    public async Task<List<SalesFact>> SalesAsync(AnalyticsFilter filter, Period period, CancellationToken ct)
     {
         var items = db.SaleItemBatches.AsNoTracking()
             .Where(b => b.SaleItem.Sale.Status == SaleStatus.Active
                 && b.SaleItem.Sale.SaleDate >= period.From && b.SaleItem.Sale.SaleDate <= period.To);
         if (filter.DealerId is { } dealerId) items = items.Where(b => b.SaleItem.Sale.DealerId == dealerId);
         if (filter.ProductId is { } productId) items = items.Where(b => b.SaleItem.ProductId == productId);
+        if (filter.RegionId is { } regionId) items = items.Where(b => b.SaleItem.Sale.Pharmacy.RegionId == regionId);
+        if (filter.DistrictId is { } districtId) items = items.Where(b => b.SaleItem.Sale.Pharmacy.DistrictId == districtId);
 
         var sales = await items
             .GroupBy(b => new
@@ -56,57 +48,45 @@ public sealed class AnalyticsDataService(IAppDbContext db, ICurrentUser currentU
                 b.SaleItem.Sale.DealerId,
                 b.SaleItem.Sale.PharmacyId,
                 b.SaleItem.Sale.Pharmacy.RegionId,
+                b.SaleItem.Sale.Pharmacy.DistrictId,
                 b.SaleItem.ProductId
             })
             .Select(g => new SalesFact(
-                g.Key.SaleDate, g.Key.DealerId, g.Key.PharmacyId, g.Key.RegionId, g.Key.ProductId,
+                g.Key.SaleDate, g.Key.DealerId, g.Key.PharmacyId, g.Key.RegionId, g.Key.DistrictId, g.Key.ProductId,
                 g.Sum(b => b.Quantity),
                 g.Sum(b => b.Quantity * b.SaleItem.UnitPrice),
                 g.Sum(b => b.Quantity * b.Batch.PurchasePrice)))
             .ToListAsync(ct);
 
-        var returns = await ReturnsAsync(filter, period, ct);
-        return sales.Concat(returns).Where(f => InRegion(f.RegionId, filter.RegionId, regions)).ToList();
+        sales.AddRange(await ReturnsAsync(filter, period, ct));
+        return sales;
     }
 
-    public async Task<List<StockFact>> StockAsync(AnalyticsFilter filter, IReadOnlyDictionary<Guid, RegionInfo> regions, CancellationToken ct)
+    /// <summary>The central store has no address, so a region or district filter leaves only dealers' stock.</summary>
+    public async Task<List<StockFact>> StockAsync(AnalyticsFilter filter, CancellationToken ct)
     {
         var balances = db.StockBalances.AsNoTracking().Where(b => b.Quantity > 0);
         if (filter.ProductId is { } productId) balances = balances.Where(b => b.Batch.ProductId == productId);
         if (filter.DealerId is { } dealerId) balances = balances.Where(b => b.Location.DealerId == dealerId);
+        if (filter.RegionId is { } regionId) balances = balances.Where(b => b.Location.Dealer!.RegionId == regionId);
+        if (filter.DistrictId is { } districtId) balances = balances.Where(b => b.Location.Dealer!.DistrictId == districtId);
 
-        var rows = await balances.Select(b => new
-        {
-            Fact = new StockFact(b.LocationId, b.Location.Name, b.Location.DealerId, b.Batch.ProductId, b.BatchId, b.Batch.BatchNumber, b.Batch.ExpiryDate, b.Quantity, b.Batch.PurchasePrice),
-            RegionId = b.Location.Dealer != null ? b.Location.Dealer.RegionId : (Guid?)null
-        }).ToListAsync(ct);
-
-        // The central store has no region, so a region filter leaves only dealers' stock.
-        return rows
-            .Where(r => filter.RegionId is null || (r.RegionId is { } id && InRegion(id, filter.RegionId, regions)))
-            .Select(r => r.Fact)
-            .ToList();
+        return await balances
+            .Select(b => new StockFact(b.LocationId, b.Location.Name, b.Location.DealerId, b.Batch.ProductId, b.BatchId, b.Batch.BatchNumber, b.Batch.ExpiryDate, b.Quantity, b.Batch.PurchasePrice))
+            .ToListAsync(ct);
     }
 
-    public async Task<List<TransitFact>> TransitAsync(AnalyticsFilter filter, IReadOnlyDictionary<Guid, RegionInfo> regions, CancellationToken ct)
+    public async Task<List<TransitFact>> TransitAsync(AnalyticsFilter filter, CancellationToken ct)
     {
         var items = db.ShipmentItems.AsNoTracking().Where(i => i.Shipment.Status == ShipmentStatus.InTransit);
         if (filter.ProductId is { } productId) items = items.Where(i => i.Batch.ProductId == productId);
         if (filter.DealerId is { } dealerId) items = items.Where(i => i.Shipment.ToLocation.DealerId == dealerId);
+        if (filter.RegionId is { } regionId) items = items.Where(i => i.Shipment.ToLocation.Dealer!.RegionId == regionId);
+        if (filter.DistrictId is { } districtId) items = items.Where(i => i.Shipment.ToLocation.Dealer!.DistrictId == districtId);
 
-        var rows = await items.Select(i => new
-        {
-            i.Shipment.ToLocation.DealerId,
-            RegionId = i.Shipment.ToLocation.Dealer != null ? i.Shipment.ToLocation.Dealer.RegionId : (Guid?)null,
-            i.Batch.ProductId,
-            Units = i.SentQuantity,
-            Value = i.SentQuantity * i.Batch.PurchasePrice
-        }).ToListAsync(ct);
-
-        return rows
-            .Where(r => filter.RegionId is null || (r.RegionId is { } id && InRegion(id, filter.RegionId, regions)))
-            .Select(r => new TransitFact(r.DealerId, r.ProductId, r.Units, r.Value))
-            .ToList();
+        return await items
+            .Select(i => new TransitFact(i.Shipment.ToLocation.DealerId, i.Batch.ProductId, i.SentQuantity, i.SentQuantity * i.Batch.PurchasePrice))
+            .ToListAsync(ct);
     }
 
     public async Task<Dictionary<Guid, DateOnly>> LastSaleByDealerAsync(CancellationToken ct) =>
@@ -126,14 +106,10 @@ public sealed class AnalyticsDataService(IAppDbContext db, ICurrentUser currentU
                 && a.ReviewedAt >= from && a.ReviewedAt < to);
         if (filter.DealerId is { } dealerId) writeOffs = writeOffs.Where(a => a.Location.DealerId == dealerId);
         if (filter.ProductId is { } productId) writeOffs = writeOffs.Where(a => a.Batch.ProductId == productId);
+        if (filter.RegionId is { } regionId) writeOffs = writeOffs.Where(a => a.Location.Dealer!.RegionId == regionId);
+        if (filter.DistrictId is { } districtId) writeOffs = writeOffs.Where(a => a.Location.Dealer!.DistrictId == districtId);
 
         return await writeOffs.SumAsync(a => a.Quantity * a.Batch.PurchasePrice, ct);
-    }
-
-    public static bool InRegion(Guid regionId, Guid? filterRegionId, IReadOnlyDictionary<Guid, RegionInfo> regions)
-    {
-        if (filterRegionId is null || regionId == filterRegionId) return true;
-        return regions.TryGetValue(regionId, out var region) && region.ParentId == filterRegionId;
     }
 
     private async Task<List<SalesFact>> ReturnsAsync(AnalyticsFilter filter, Period period, CancellationToken ct)
@@ -143,6 +119,8 @@ public sealed class AnalyticsDataService(IAppDbContext db, ICurrentUser currentU
                 && a.PharmacyId != null && a.Location.DealerId != null);
         if (filter.DealerId is { } dealerId) returns = returns.Where(a => a.Location.DealerId == dealerId);
         if (filter.ProductId is { } productId) returns = returns.Where(a => a.Batch.ProductId == productId);
+        if (filter.RegionId is { } regionId) returns = returns.Where(a => a.Pharmacy!.RegionId == regionId);
+        if (filter.DistrictId is { } districtId) returns = returns.Where(a => a.Pharmacy!.DistrictId == districtId);
 
         var rows = await returns.Select(a => new
         {
@@ -150,6 +128,7 @@ public sealed class AnalyticsDataService(IAppDbContext db, ICurrentUser currentU
             DealerId = a.Location.DealerId!.Value,
             PharmacyId = a.PharmacyId!.Value,
             a.Pharmacy!.RegionId,
+            a.Pharmacy!.DistrictId,
             a.Batch.ProductId,
             a.Quantity,
             Amount = a.Quantity * (a.UnitPrice ?? 0),
@@ -159,7 +138,7 @@ public sealed class AnalyticsDataService(IAppDbContext db, ICurrentUser currentU
         return rows
             .Select(r => (Date: DateOnly.FromDateTime(r.ReviewedAt!.Value.UtcDateTime), Row: r))
             .Where(x => period.Contains(x.Date))
-            .Select(x => new SalesFact(x.Date, x.Row.DealerId, x.Row.PharmacyId, x.Row.RegionId, x.Row.ProductId, -x.Row.Quantity, -x.Row.Amount, -x.Row.Cost))
+            .Select(x => new SalesFact(x.Date, x.Row.DealerId, x.Row.PharmacyId, x.Row.RegionId, x.Row.DistrictId, x.Row.ProductId, -x.Row.Quantity, -x.Row.Amount, -x.Row.Cost))
             .ToList();
     }
 }

@@ -55,25 +55,25 @@ public sealed class TestApi(ApiFactory factory)
     public async Task<IReadOnlyList<RegionDto>> ProvincesAsync()
     {
         var admin = await AdminAsync();
-        var page = await GetAsync<PagedResult<RegionDto>>(admin, "/api/v1/regions?type=Province&pageSize=50");
+        var page = await GetAsync<PagedResult<RegionDto>>(admin, "/api/v1/regions?pageSize=50");
         return page.Items;
     }
 
-    public async Task<CreatedDealer> CreateDealerAsync(Guid? regionId = null)
+    public async Task<CreatedDealer> CreateDealerAsync(Guid? regionId = null, Guid? districtId = null)
     {
         var admin = await AdminAsync();
         regionId ??= (await ProvincesAsync())[0].Id;
         var dealer = await PostAsync<DealerDto>(admin, "/api/v1/dealers",
-            new SaveDealerRequest($"Diler {Guid.NewGuid():N}", NextPhone(), regionId.Value, "Manzil", null));
+            new SaveDealerRequest($"Diler {Guid.NewGuid():N}", NextPhone(), regionId.Value, districtId, "Manzil"));
         return new CreatedDealer(dealer, await CreateUserAsync(UserRole.Dealer, dealer.Id));
     }
 
-    public async Task<PharmacyDto> CreatePharmacyAsync(Guid? regionId = null)
+    public async Task<PharmacyDto> CreatePharmacyAsync(Guid? regionId = null, Guid? districtId = null)
     {
         var admin = await AdminAsync();
         regionId ??= (await ProvincesAsync())[0].Id;
         return await PostAsync<PharmacyDto>(admin, "/api/v1/pharmacies",
-            new SavePharmacyRequest($"Dorixona {Guid.NewGuid():N}", regionId.Value, "Manzil", null));
+            new SavePharmacyRequest($"Dorixona {Guid.NewGuid():N}", regionId.Value, districtId, "Manzil"));
     }
 
     public async Task<ProductDto> CreateProductAsync()

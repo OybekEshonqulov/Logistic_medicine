@@ -17,7 +17,7 @@ public static class ErrorCodes
     public const string PhoneTaken = "user.phone_taken";
     public const string DealerRequired = "user.dealer_required";
     public const string RegionMustBeDistrict = "region.must_be_district";
-    public const string RegionWrongParent = "region.wrong_parent";
+    public const string DistrictNotInRegion = "district.not_in_region";
     public const string BatchExpiryMismatch = "batch.expiry_mismatch";
     public const string BatchExpired = "batch.expired";
     public const string InsufficientStock = "stock.insufficient";

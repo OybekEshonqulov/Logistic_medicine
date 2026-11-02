@@ -3,11 +3,22 @@ using PharmaTrack.Domain.Enums;
 
 namespace PharmaTrack.Domain.Entities;
 
+/// <summary>A province, the Republic of Karakalpakstan or Tashkent city.</summary>
 public sealed class Region : Entity
 {
-    public Guid? ParentId { get; set; }
-    public Region? Parent { get; set; }
-    public RegionType Type { get; set; }
+    public string? Code { get; set; }
+    public required string NameUz { get; set; }
+    public required string NameRu { get; set; }
+    public bool IsActive { get; set; } = true;
+}
+
+/// <summary>A district or a city of regional subordination.</summary>
+public sealed class District : Entity
+{
+    public Guid RegionId { get; set; }
+    public Region Region { get; set; } = null!;
+    public string? Code { get; set; }
+    public DistrictType Type { get; set; }
     public required string NameUz { get; set; }
     public required string NameRu { get; set; }
     public bool IsActive { get; set; } = true;
@@ -19,9 +30,12 @@ public sealed class Dealer : Entity
     public required string Phone { get; set; }
     public Guid RegionId { get; set; }
     public Region Region { get; set; } = null!;
+    public Guid? DistrictId { get; set; }
+    public District? District { get; set; }
     public required string Address { get; set; }
     public bool IsActive { get; set; } = true;
     public List<DealerRegion> ServiceRegions { get; init; } = [];
+    public List<DealerDistrict> ServiceDistricts { get; init; } = [];
 }
 
 public sealed class DealerRegion
@@ -31,11 +45,20 @@ public sealed class DealerRegion
     public Region Region { get; init; } = null!;
 }
 
+public sealed class DealerDistrict
+{
+    public Guid DealerId { get; init; }
+    public Guid DistrictId { get; init; }
+    public District District { get; init; } = null!;
+}
+
 public sealed class Pharmacy : Entity
 {
     public required string Name { get; set; }
     public Guid RegionId { get; set; }
     public Region Region { get; set; } = null!;
+    public Guid? DistrictId { get; set; }
+    public District? District { get; set; }
     public required string Address { get; set; }
     public string? Phone { get; set; }
     public PharmacyStatus Status { get; set; } = PharmacyStatus.Pending;

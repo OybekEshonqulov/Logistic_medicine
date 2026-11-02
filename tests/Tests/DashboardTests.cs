@@ -113,7 +113,7 @@ public sealed class DashboardTests(ApiFactory factory)
         var (product, _) = await _api.StockDealerAsync(dealer, 10);
         await SellAsync(dealer, pharmacy, product, 4, 50m, TestApi.Today());
 
-        var rows = await TestApi.GetAsync<List<SalesGroupRow>>(admin, $"/api/v1/analytics/sales?groupBy=Province&dealerId={dealer.Dealer.Id}");
+        var rows = await TestApi.GetAsync<List<SalesGroupRow>>(admin, $"/api/v1/analytics/sales?groupBy=Region&dealerId={dealer.Dealer.Id}");
 
         var row = Assert.Single(rows);
         Assert.Equal(away.Id.ToString(), row.Key);
@@ -121,23 +121,54 @@ public sealed class DashboardTests(ApiFactory factory)
     }
 
     [Fact]
-    public async Task Province_filter_includes_its_districts()
+    public async Task Region_and_district_filters_narrow_the_figures()
     {
         var admin = await _api.AdminAsync();
-        var province = (await _api.ProvincesAsync()).Single(p => p.NameUz.StartsWith("Jizzax"));
-        var district = await TestApi.PostAsync<RegionDto>(admin, "/api/v1/regions",
-            new SaveRegionRequest(province.Id, RegionType.District, $"Tuman {Guid.NewGuid():N}", "Район"));
-        var dealer = await _api.CreateDealerAsync(district.Id);
-        var pharmacy = await _api.CreatePharmacyAsync(district.Id);
+        var region = (await _api.ProvincesAsync()).Single(p => p.NameUz.StartsWith("Jizzax"));
+        var districts = await TestApi.GetAsync<PagedResult<DistrictDto>>(admin, $"/api/v1/districts?regionId={region.Id}&pageSize=50");
+        var (here, there) = (districts.Items[0], districts.Items[1]);
+
+        var dealer = await _api.CreateDealerAsync(region.Id, here.Id);
+        var pharmacy = await _api.CreatePharmacyAsync(region.Id, here.Id);
         var (product, _) = await _api.StockDealerAsync(dealer, 10);
         await SellAsync(dealer, pharmacy, product, 2, 100m, TestApi.Today());
 
-        var byProvince = await TestApi.GetAsync<DashboardKpis>(admin, $"/api/v1/analytics/summary?regionId={province.Id}&productId={product.Id}");
-        var byDistrict = await TestApi.GetAsync<DashboardKpis>(admin, $"/api/v1/analytics/summary?regionId={district.Id}&productId={product.Id}");
+        var byRegion = await TestApi.GetAsync<DashboardKpis>(admin, $"/api/v1/analytics/summary?regionId={region.Id}&productId={product.Id}");
+        var byDistrict = await TestApi.GetAsync<DashboardKpis>(admin, $"/api/v1/analytics/summary?districtId={here.Id}&productId={product.Id}");
+        var elsewhere = await TestApi.GetAsync<DashboardKpis>(admin, $"/api/v1/analytics/summary?districtId={there.Id}&productId={product.Id}");
 
-        Assert.Equal(200m, byProvince.SalesAmount.Value);
+        Assert.Equal(200m, byRegion.SalesAmount.Value);
+        Assert.Equal(8, byRegion.StockUnits);
         Assert.Equal(200m, byDistrict.SalesAmount.Value);
-        Assert.Equal(8, byProvince.StockUnits);
+        Assert.Equal(0m, elsewhere.SalesAmount.Value);
+        Assert.Equal(0, elsewhere.StockUnits);
+    }
+
+    [Fact]
+    public async Task Selecting_a_region_adds_a_district_breakdown()
+    {
+        var admin = await _api.AdminAsync();
+        var region = (await _api.ProvincesAsync()).Single(p => p.NameUz.StartsWith("Namangan"));
+        var districts = await TestApi.GetAsync<PagedResult<DistrictDto>>(admin, $"/api/v1/districts?regionId={region.Id}&pageSize=50");
+        var district = districts.Items[0];
+        var dealer = await _api.CreateDealerAsync(region.Id, district.Id);
+        var pharmacy = await _api.CreatePharmacyAsync(region.Id, district.Id);
+        var (product, _) = await _api.StockDealerAsync(dealer, 10);
+        await SellAsync(dealer, pharmacy, product, 3, 100m, TestApi.Today());
+
+        var whole = await TestApi.GetAsync<DashboardDto>(admin, $"/api/v1/analytics/dashboard?productId={product.Id}");
+        Assert.Empty(whole.Districts);
+
+        var selected = await TestApi.GetAsync<DashboardDto>(admin, $"/api/v1/analytics/dashboard?regionId={region.Id}&productId={product.Id}");
+        Assert.Equal(districts.TotalCount, selected.Districts.Count);
+        var row = selected.Districts[0];
+        Assert.Equal(district.Id, row.DistrictId);
+        Assert.Equal(300m, row.SalesAmount);
+        Assert.Equal(7, row.StockUnits);
+        Assert.Equal(100m, row.SharePercent);
+
+        var grouped = await TestApi.GetAsync<List<SalesGroupRow>>(admin, $"/api/v1/analytics/sales?groupBy=District&productId={product.Id}");
+        Assert.Equal(district.NameUz, Assert.Single(grouped).Label);
     }
 
     [Fact]

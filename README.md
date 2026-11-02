@@ -36,9 +36,7 @@ dotnet user-secrets set "Seed:AdminPassword" "KUCHLI-PAROL"
 dotnet run
 ```
 
-Birinchi ishga tushishda migratsiyalar qo'llanadi, markaziy ombor, 14 ta viloyat va birinchi administrator yaratiladi. Swagger: `/swagger`. Holat tekshiruvi: `/health`.
-
-Tumanlar ro'yxati boshida bo'sh: ularni `POST /api/v1/regions` orqali qo'shing.
+Birinchi ishga tushishda migratsiyalar qo'llanadi, markaziy ombor, 14 ta hudud, 209 ta tuman va shahar hamda birinchi administrator yaratiladi. Swagger: `/swagger`. Holat tekshiruvi: `/health`.
 
 ## Testlar
 
@@ -77,3 +75,4 @@ dotnet ef migrations add NomiBilan -p src/Infrastructure -s src/Api -o Persisten
 
 - [Frontend va mobil uchun API qo'llanmasi](docs/API_GUIDE.md)
 - [Rahbar dashboardi](docs/DASHBOARD.md)
+- [Viloyat va tumanlar](docs/REGIONS.md)

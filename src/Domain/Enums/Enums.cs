@@ -2,7 +2,7 @@ namespace PharmaTrack.Domain.Enums;
 
 public enum UserRole { Admin, Warehouse, Executive, Dealer }
 
-public enum RegionType { Province, District }
+public enum DistrictType { District, City }
 
 public enum LocationType { Central, Dealer }
 

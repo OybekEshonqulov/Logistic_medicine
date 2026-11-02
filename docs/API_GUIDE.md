@@ -78,7 +78,7 @@ Draft → Approved → InTransit → Received
 | Modul | Endpointlar |
 |---|---|
 | Auth | `auth/login`, `refresh`, `logout`, `me`, `change-password` |
-| Ma'lumotnomalar | `users`, `regions`, `dealers`, `pharmacies`, `products`, `suppliers`, `manufacturers` |
+| Ma'lumotnomalar | `users`, `regions`, `districts`, `dealers`, `pharmacies`, `products`, `suppliers`, `manufacturers` |
 | Kirim | `receipts`, `receipts/import`, `receipts/import/template` |
 | Qoldiq | `batches`, `stock/balances`, `stock/movements` |
 | Jo'natma | `shipments` va amallari |

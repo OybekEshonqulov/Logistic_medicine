@@ -246,7 +246,7 @@ public sealed class StockFlowTests(ApiFactory factory)
         async Task Update(params Guid[] regionIds)
         {
             var response = await admin.PutAsJsonAsync($"/api/v1/dealers/{dealer.Dealer.Id}",
-                new SaveDealerRequest(dealer.Dealer.Name, dealer.Dealer.Phone, provinces[0].Id, "Manzil", regionIds), TestApi.Json);
+                new SaveDealerRequest(dealer.Dealer.Name, dealer.Dealer.Phone, provinces[0].Id, null, "Manzil", regionIds), TestApi.Json);
             Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
         }
 

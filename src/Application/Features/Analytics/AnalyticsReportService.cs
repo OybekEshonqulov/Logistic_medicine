@@ -13,18 +13,19 @@ public sealed class AnalyticsReportService(
     IOptions<AlertOptions> alertOptions,
     TimeProvider clock)
 {
+    private const string NoDistrictKey = "none";
+
     private readonly AlertOptions _options = alertOptions.Value;
 
     public async Task<IReadOnlyList<SalesGroupRow>> SalesAsync(AnalyticsFilter filter, SalesGroupBy groupBy, CancellationToken ct)
     {
         filter = data.Scope(filter);
         var period = data.ResolvePeriod(filter);
-        var regions = await data.RegionsAsync(ct);
-        var sales = await data.SalesAsync(filter, period, regions, ct);
+        var sales = await data.SalesAsync(filter, period, ct);
 
-        var labels = await SalesLabelsAsync(groupBy, sales, regions, ct);
+        var labels = await SalesLabelsAsync(groupBy, sales, ct);
         return sales
-            .GroupBy(s => SalesKey(s, groupBy, regions))
+            .GroupBy(s => SalesKey(s, groupBy))
             .Select(g => new SalesGroupRow(g.Key, labels.GetValueOrDefault(g.Key, g.Key), g.Sum(s => s.Units), g.Sum(s => s.Amount)))
             .OrderBy(r => groupBy is SalesGroupBy.Day or SalesGroupBy.Week or SalesGroupBy.Month ? r.Key : string.Empty)
             .ThenByDescending(r => r.Amount)
@@ -34,12 +35,11 @@ public sealed class AnalyticsReportService(
     public async Task<IReadOnlyList<StockGroupRow>> StockAsync(AnalyticsFilter filter, StockGroupBy groupBy, CancellationToken ct)
     {
         filter = data.Scope(filter);
-        var regions = await data.RegionsAsync(ct);
-        var stock = await data.StockAsync(filter, regions, ct);
+        var stock = await data.StockAsync(filter, ct);
         var showValue = !currentUser.IsDealer();
 
         var productNames = await db.Products.AsNoTracking().ToDictionaryAsync(p => p.Id, p => p.Name, ct);
-        var dealerRegions = await db.Dealers.AsNoTracking().ToDictionaryAsync(d => d.Id, d => d.RegionId, ct);
+        var dealerRegions = await db.Dealers.AsNoTracking().Select(d => new { d.Id, d.RegionId, d.Region.NameUz }).ToDictionaryAsync(d => d.Id, ct);
 
         (string Key, string Label) Group(StockFact s)
         {
@@ -49,10 +49,10 @@ public sealed class AnalyticsReportService(
                     return (s.ProductId.ToString(), productNames[s.ProductId]);
                 case StockGroupBy.Batch:
                     return (s.BatchId.ToString(), $"{productNames[s.ProductId]} / {s.BatchNumber}");
-                case StockGroupBy.Province when s.DealerId is { } dealerId:
-                    var province = regions[regions[dealerRegions[dealerId]].ProvinceId];
-                    return (province.Id.ToString(), province.NameUz);
-                case StockGroupBy.Province:
+                case StockGroupBy.Region when s.DealerId is { } dealerId:
+                    var region = dealerRegions[dealerId];
+                    return (region.RegionId.ToString(), region.NameUz);
+                case StockGroupBy.Region:
                     return (s.LocationId.ToString(), s.LocationName);
                 default:
                     return (s.LocationId.ToString(), s.LocationName);
@@ -69,8 +69,7 @@ public sealed class AnalyticsReportService(
     public async Task<IReadOnlyList<ExpiringRow>> ExpiringAsync(AnalyticsFilter filter, int? withinDays, CancellationToken ct)
     {
         filter = data.Scope(filter);
-        var regions = await data.RegionsAsync(ct);
-        var stock = await data.StockAsync(filter, regions, ct);
+        var stock = await data.StockAsync(filter, ct);
         var today = clock.Today();
         var until = today.AddDays(withinDays ?? _options.ExpiryWarningDays);
         var names = await ProductNamesAsync(stock.Select(s => s.ProductId), ct);
@@ -86,9 +85,8 @@ public sealed class AnalyticsReportService(
     {
         filter = data.Scope(filter);
         var period = data.ResolvePeriod(filter);
-        var regions = await data.RegionsAsync(ct);
-        var sales = await data.SalesAsync(filter, period, regions, ct);
-        var stock = await data.StockAsync(filter, regions, ct);
+        var sales = await data.SalesAsync(filter, period, ct);
+        var stock = await data.StockAsync(filter, ct);
 
         var soldBy = sales.GroupBy(s => s.ProductId).ToDictionary(g => g.Key, g => g.Sum(s => s.Units));
         var stockBy = stock.GroupBy(s => s.ProductId).ToDictionary(g => g.Key, g => g.Sum(s => s.Units));
@@ -107,8 +105,7 @@ public sealed class AnalyticsReportService(
     public async Task<IReadOnlyList<DeadStockRow>> DeadStockAsync(AnalyticsFilter filter, int days, CancellationToken ct)
     {
         filter = data.Scope(filter);
-        var regions = await data.RegionsAsync(ct);
-        var stock = await data.StockAsync(filter, regions, ct);
+        var stock = await data.StockAsync(filter, ct);
         var cutoff = clock.Today().AddDays(-days);
         var showValue = !currentUser.IsDealer();
 
@@ -136,16 +133,14 @@ public sealed class AnalyticsReportService(
     {
         filter = data.Scope(filter);
         var period = data.ResolvePeriod(filter);
-        var regions = await data.RegionsAsync(ct);
-        var sales = await data.SalesAsync(filter, new Period(period.Previous.From, period.To), regions, ct);
-        var stock = await data.StockAsync(filter, regions, ct);
+        var sales = await data.SalesAsync(filter, new Period(period.Previous.From, period.To), ct);
+        var stock = await data.StockAsync(filter, ct);
         return await DealerRowsAsync(filter, period, sales, stock, ct);
     }
 
     public async Task<IReadOnlyList<DealerRow>> DealerRowsAsync(
         AnalyticsFilter filter, Period period, List<SalesFact> sales, List<StockFact> stock, CancellationToken ct)
     {
-        var regions = await data.RegionsAsync(ct);
         var lastSales = await data.LastSaleByDealerAsync(ct);
         var today = clock.Today();
         var expiringUntil = today.AddDays(_options.ExpiryWarningDays);
@@ -153,10 +148,13 @@ public sealed class AnalyticsReportService(
 
         var dealers = db.Dealers.AsNoTracking().Where(d => d.IsActive);
         if (filter.DealerId is { } dealerId) dealers = dealers.Where(d => d.Id == dealerId);
-        var rows = await dealers.Select(d => new { d.Id, d.Name, d.RegionId }).ToListAsync(ct);
+        if (filter.RegionId is { } regionId) dealers = dealers.Where(d => d.RegionId == regionId);
+        if (filter.DistrictId is { } districtId) dealers = dealers.Where(d => d.DistrictId == districtId);
+        var rows = await dealers
+            .Select(d => new { d.Id, d.Name, d.RegionId, RegionName = d.Region.NameUz, d.DistrictId, DistrictName = d.District != null ? d.District.NameUz : null })
+            .ToListAsync(ct);
 
         return rows
-            .Where(d => AnalyticsDataService.InRegion(d.RegionId, filter.RegionId, regions))
             .Select(d =>
             {
                 var current = sales.Where(s => s.DealerId == d.Id && period.Contains(s.Date)).ToList();
@@ -169,7 +167,7 @@ public sealed class AnalyticsReportService(
                 int? daysSince = hasSale ? today.DayNumber - last.DayNumber : null;
 
                 return new DealerRow(
-                    d.Id, d.Name, d.RegionId, regions[d.RegionId].NameUz, amount, units,
+                    d.Id, d.Name, d.RegionId, d.RegionName, d.DistrictId, d.DistrictName, amount, units,
                     AnalyticsCalc.ChangePercent(amount, previousAmount),
                     stockUnits,
                     showValue ? dealerStock.Sum(s => s.Value) : null,
@@ -214,25 +212,29 @@ public sealed class AnalyticsReportService(
         _ => ReportingStatus.OnTime
     };
 
-    private static string SalesKey(SalesFact s, SalesGroupBy groupBy, IReadOnlyDictionary<Guid, RegionInfo> regions) => groupBy switch
+    private static string SalesKey(SalesFact s, SalesGroupBy groupBy) => groupBy switch
     {
         SalesGroupBy.Day => s.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
         SalesGroupBy.Week => AnalyticsCalc.BucketStart(s.Date, TrendGranularity.Week).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
         SalesGroupBy.Month => s.Date.ToString("yyyy-MM", CultureInfo.InvariantCulture),
-        SalesGroupBy.Province => regions[s.RegionId].ProvinceId.ToString(),
-        SalesGroupBy.District => s.RegionId.ToString(),
+        SalesGroupBy.Region => s.RegionId.ToString(),
+        SalesGroupBy.District => s.DistrictId?.ToString() ?? NoDistrictKey,
         SalesGroupBy.Dealer => s.DealerId.ToString(),
         SalesGroupBy.Pharmacy => s.PharmacyId.ToString(),
         _ => s.ProductId.ToString()
     };
 
     private async Task<IReadOnlyDictionary<string, string>> SalesLabelsAsync(
-        SalesGroupBy groupBy, List<SalesFact> sales, IReadOnlyDictionary<Guid, RegionInfo> regions, CancellationToken ct)
+        SalesGroupBy groupBy, List<SalesFact> sales, CancellationToken ct)
     {
         switch (groupBy)
         {
-            case SalesGroupBy.Province or SalesGroupBy.District:
-                return regions.ToDictionary(r => r.Key.ToString(), r => r.Value.NameUz);
+            case SalesGroupBy.Region:
+                return await db.Regions.AsNoTracking().ToDictionaryAsync(r => r.Id.ToString(), r => r.NameUz, ct);
+            case SalesGroupBy.District:
+                var districts = await db.Districts.AsNoTracking().ToDictionaryAsync(d => d.Id.ToString(), d => d.NameUz, ct);
+                districts[NoDistrictKey] = "Tuman ko'rsatilmagan";
+                return districts;
             case SalesGroupBy.Dealer:
                 var dealerIds = sales.Select(s => s.DealerId).Distinct().ToList();
                 return await db.Dealers.AsNoTracking().Where(d => dealerIds.Contains(d.Id)).ToDictionaryAsync(d => d.Id.ToString(), d => d.Name, ct);

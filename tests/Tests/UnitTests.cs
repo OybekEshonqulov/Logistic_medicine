@@ -71,7 +71,7 @@ public sealed class AnalyticsCalcTests
     }
 
     private static SalesFact Fact(DateOnly date, decimal amount) =>
-        new(date, Guid.Empty, Guid.Empty, Guid.Empty, Guid.Empty, 1, amount, 0);
+        new(date, Guid.Empty, Guid.Empty, Guid.Empty, null, Guid.Empty, 1, amount, 0);
 
     private static StockFact Stock(DateOnly expiry) =>
         new(Guid.Empty, "x", null, Guid.Empty, Guid.Empty, "b", expiry, 1, 1);

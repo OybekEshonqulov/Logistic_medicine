@@ -24,7 +24,7 @@ public static class ErrorCatalog
         [ErrorCodes.IdempotencyKeyRequired] = new(400, "Idempotency-Key sarlavhasi majburiy", "Заголовок Idempotency-Key обязателен"),
         [ErrorCodes.PhoneTaken] = new(409, "Bu telefon raqam band", "Этот номер телефона уже занят"),
         [ErrorCodes.DealerRequired] = new(400, "Diler foydalanuvchisi uchun mavjud dilerni tanlang", "Для пользователя-дилера выберите существующего дилера"),
-        [ErrorCodes.RegionWrongParent] = new(400, "Tuman viloyatga bog'lanishi, viloyat esa bog'lanmasligi kerak", "Район должен относиться к области, а область не имеет родителя"),
+        [ErrorCodes.DistrictNotInRegion] = new(400, "Tanlangan tuman shu hududga tegishli emas", "Выбранный район не относится к этой области"),
         [ErrorCodes.BatchExpiryMismatch] = new(409, "Bu partiya boshqa yaroqlilik muddati bilan ro'yxatdan o'tgan", "Эта партия зарегистрирована с другим сроком годности"),
         [ErrorCodes.BatchExpired] = new(400, "Partiyaning yaroqlilik muddati o'tgan", "Срок годности партии истёк"),
         [ErrorCodes.InsufficientStock] = new(409, "Qoldiq yetarli emas", "Недостаточно остатка"),

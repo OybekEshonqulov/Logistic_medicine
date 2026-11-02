@@ -1,0 +1,1354 @@
+[
+    {
+        "code":  "1703",
+        "nameUz":  "Andijon viloyati",
+        "nameRu":  "Андижанская область",
+        "districts":  [
+                          {
+                              "code":  "1703401",
+                              "type":  "City",
+                              "nameUz":  "Andijon shahri",
+                              "nameRu":  "г. Андижан"
+                          },
+                          {
+                              "code":  "1703203",
+                              "type":  "District",
+                              "nameUz":  "Andijon tumani",
+                              "nameRu":  "Андижанский район"
+                          },
+                          {
+                              "code":  "1703224",
+                              "type":  "District",
+                              "nameUz":  "Asaka tumani",
+                              "nameRu":  "Асакинский район"
+                          },
+                          {
+                              "code":  "1703206",
+                              "type":  "District",
+                              "nameUz":  "Baliqchi tumani",
+                              "nameRu":  "Балыкчинский район"
+                          },
+                          {
+                              "code":  "1703209",
+                              "type":  "District",
+                              "nameUz":  "Bo‘ston tumani",
+                              "nameRu":  "Бустонский район"
+                          },
+                          {
+                              "code":  null,
+                              "type":  "District",
+                              "nameUz":  "Bo‘z tumani",
+                              "nameRu":  "Бозский район"
+                          },
+                          {
+                              "code":  "1703210",
+                              "type":  "District",
+                              "nameUz":  "Buloqboshi tumani",
+                              "nameRu":  "Булакбашинский район"
+                          },
+                          {
+                              "code":  "1703214",
+                              "type":  "District",
+                              "nameUz":  "Izboskan tumani",
+                              "nameRu":  "Избасканский район"
+                          },
+                          {
+                              "code":  "1703211",
+                              "type":  "District",
+                              "nameUz":  "Jalaquduq tumani",
+                              "nameRu":  "Джалалкудукский район"
+                          },
+                          {
+                              "code":  "1703227",
+                              "type":  "District",
+                              "nameUz":  "Marxamat tumani",
+                              "nameRu":  "Мархаматский район"
+                          },
+                          {
+                              "code":  "1703202",
+                              "type":  "District",
+                              "nameUz":  "Oltinko‘l tumani",
+                              "nameRu":  "Алтынкульский район"
+                          },
+                          {
+                              "code":  "1703232",
+                              "type":  "District",
+                              "nameUz":  "Paxtaobod tumani",
+                              "nameRu":  "Пахтаабадский район"
+                          },
+                          {
+                              "code":  "1703220",
+                              "type":  "District",
+                              "nameUz":  "Qo‘rg‘ontepa tumani",
+                              "nameRu":  "Кургантепинский район"
+                          },
+                          {
+                              "code":  "1703230",
+                              "type":  "District",
+                              "nameUz":  "Shahrixon tumani",
+                              "nameRu":  "Шахриханский район"
+                          },
+                          {
+                              "code":  "1703217",
+                              "type":  "District",
+                              "nameUz":  "Ulug‘nor tumani",
+                              "nameRu":  "Улугнорский район"
+                          },
+                          {
+                              "code":  "1703236",
+                              "type":  "District",
+                              "nameUz":  "Xo‘jaobod tumani",
+                              "nameRu":  "Ходжаабадский район"
+                          },
+                          {
+                              "code":  "1703408",
+                              "type":  "City",
+                              "nameUz":  "Xonobod shahri",
+                              "nameRu":  "г. Ханабад"
+                          }
+                      ]
+    },
+    {
+        "code":  "1706",
+        "nameUz":  "Buxoro viloyati",
+        "nameRu":  "Бухарская область",
+        "districts":  [
+                          {
+                              "code":  "1706401",
+                              "type":  "City",
+                              "nameUz":  "Buxoro shahri",
+                              "nameRu":  "г. Бухара"
+                          },
+                          {
+                              "code":  "1706207",
+                              "type":  "District",
+                              "nameUz":  "Buxoro tumani",
+                              "nameRu":  "Бухарский район"
+                          },
+                          {
+                              "code":  "1706215",
+                              "type":  "District",
+                              "nameUz":  "G‘ijduvon tumani",
+                              "nameRu":  "Гиждуванский район"
+                          },
+                          {
+                              "code":  "1706246",
+                              "type":  "District",
+                              "nameUz":  "Jondor tumani",
+                              "nameRu":  "Жондорский район"
+                          },
+                          {
+                              "code":  "1706403",
+                              "type":  "City",
+                              "nameUz":  "Kogon shahri",
+                              "nameRu":  "г. Каган"
+                          },
+                          {
+                              "code":  "1706219",
+                              "type":  "District",
+                              "nameUz":  "Kogon tumani",
+                              "nameRu":  "Каганский район"
+                          },
+                          {
+                              "code":  "1706204",
+                              "type":  "District",
+                              "nameUz":  "Olot tumani",
+                              "nameRu":  "Алатский район"
+                          },
+                          {
+                              "code":  "1706240",
+                              "type":  "District",
+                              "nameUz":  "Peshku tumani",
+                              "nameRu":  "Пешкунский район"
+                          },
+                          {
+                              "code":  "1706230",
+                              "type":  "District",
+                              "nameUz":  "Qorako‘l tumani",
+                              "nameRu":  "Каракульский район"
+                          },
+                          {
+                              "code":  "1706232",
+                              "type":  "District",
+                              "nameUz":  "Qorovulbozor tumani",
+                              "nameRu":  "Караулбазарский район"
+                          },
+                          {
+                              "code":  "1706242",
+                              "type":  "District",
+                              "nameUz":  "Romitan tumani",
+                              "nameRu":  "Ромитанский район"
+                          },
+                          {
+                              "code":  "1706258",
+                              "type":  "District",
+                              "nameUz":  "Shofirkon tumani",
+                              "nameRu":  "Шафирканский район"
+                          },
+                          {
+                              "code":  "1706212",
+                              "type":  "District",
+                              "nameUz":  "Vobkent tumani",
+                              "nameRu":  "Вабкентский район"
+                          }
+                      ]
+    },
+    {
+        "code":  "1730",
+        "nameUz":  "Farg‘ona viloyati",
+        "nameRu":  "Ферганская область",
+        "districts":  [
+                          {
+                              "code":  "1730215",
+                              "type":  "District",
+                              "nameUz":  "Beshariq tumani",
+                              "nameRu":  "Бешарыкский район"
+                          },
+                          {
+                              "code":  "1730209",
+                              "type":  "District",
+                              "nameUz":  "Bog‘dod tumani",
+                              "nameRu":  "Багдадский район"
+                          },
+                          {
+                              "code":  "1730212",
+                              "type":  "District",
+                              "nameUz":  "Buvayda tumani",
+                              "nameRu":  "Бувайдинский район"
+                          },
+                          {
+                              "code":  "1730236",
+                              "type":  "District",
+                              "nameUz":  "Dang‘ara tumani",
+                              "nameRu":  "Дангаринский район"
+                          },
+                          {
+                              "code":  "1730401",
+                              "type":  "City",
+                              "nameUz":  "Farg‘ona shahri",
+                              "nameRu":  "г. Фергана"
+                          },
+                          {
+                              "code":  "1730233",
+                              "type":  "District",
+                              "nameUz":  "Farg‘ona tumani",
+                              "nameRu":  "Ферганский район"
+                          },
+                          {
+                              "code":  "1730238",
+                              "type":  "District",
+                              "nameUz":  "Furqat tumani",
+                              "nameRu":  "Фуркатский район"
+                          },
+                          {
+                              "code":  "1730412",
+                              "type":  "City",
+                              "nameUz":  "Marg‘ilon shahri",
+                              "nameRu":  "г. Маргилан"
+                          },
+                          {
+                              "code":  "1730230",
+                              "type":  "District",
+                              "nameUz":  "O‘zbekiston tumani",
+                              "nameRu":  "Узбекистанский район"
+                          },
+                          {
+                              "code":  "1730203",
+                              "type":  "District",
+                              "nameUz":  "Oltiariq tumani",
+                              "nameRu":  "Алтыарыкский район"
+                          },
+                          {
+                              "code":  "1730405",
+                              "type":  "City",
+                              "nameUz":  "Qo‘qon shahri",
+                              "nameRu":  "г. Коканд"
+                          },
+                          {
+                              "code":  "1730206",
+                              "type":  "District",
+                              "nameUz":  "Qo‘shtepa tumani",
+                              "nameRu":  "Куштепинский район"
+                          },
+                          {
+                              "code":  "1730218",
+                              "type":  "District",
+                              "nameUz":  "Quva tumani",
+                              "nameRu":  "Кувинский район"
+                          },
+                          {
+                              "code":  "1730408",
+                              "type":  "City",
+                              "nameUz":  "Quvasoy shahri",
+                              "nameRu":  "г. Кувасай"
+                          },
+                          {
+                              "code":  "1730224",
+                              "type":  "District",
+                              "nameUz":  "Rishton tumani",
+                              "nameRu":  "Риштанский район"
+                          },
+                          {
+                              "code":  "1730226",
+                              "type":  "District",
+                              "nameUz":  "So‘x tumani",
+                              "nameRu":  "Сохский район"
+                          },
+                          {
+                              "code":  "1730227",
+                              "type":  "District",
+                              "nameUz":  "Toshloq tumani",
+                              "nameRu":  "Ташлакский район"
+                          },
+                          {
+                              "code":  "1730221",
+                              "type":  "District",
+                              "nameUz":  "Uchko‘prik tumani",
+                              "nameRu":  "Учкуприкский район"
+                          },
+                          {
+                              "code":  "1730242",
+                              "type":  "District",
+                              "nameUz":  "Yozyovon tumani",
+                              "nameRu":  "Язъяванский район"
+                          }
+                      ]
+    },
+    {
+        "code":  "1708",
+        "nameUz":  "Jizzax viloyati",
+        "nameRu":  "Джизакская область",
+        "districts":  [
+                          {
+                              "code":  "1708201",
+                              "type":  "District",
+                              "nameUz":  "Arnasoy tumani",
+                              "nameRu":  "Арнасайский район"
+                          },
+                          {
+                              "code":  "1708204",
+                              "type":  "District",
+                              "nameUz":  "Baxmal tumani",
+                              "nameRu":  "Бахмальский район"
+                          },
+                          {
+                              "code":  "1708215",
+                              "type":  "District",
+                              "nameUz":  "Do‘stlik tumani",
+                              "nameRu":  "Дустликский район"
+                          },
+                          {
+                              "code":  "1708235",
+                              "type":  "District",
+                              "nameUz":  "Forish tumani",
+                              "nameRu":  "Фаришский район"
+                          },
+                          {
+                              "code":  "1708209",
+                              "type":  "District",
+                              "nameUz":  "G‘allaorol tumani",
+                              "nameRu":  "Галляаральский район"
+                          },
+                          {
+                              "code":  "1708401",
+                              "type":  "City",
+                              "nameUz":  "Jizzax shahri",
+                              "nameRu":  "г. Джизак"
+                          },
+                          {
+                              "code":  "1708223",
+                              "type":  "District",
+                              "nameUz":  "Mirzacho‘l tumani",
+                              "nameRu":  "Мирзачульский район"
+                          },
+                          {
+                              "code":  "1708228",
+                              "type":  "District",
+                              "nameUz":  "Paxtakor tumani",
+                              "nameRu":  "Пахтакорский район"
+                          },
+                          {
+                              "code":  "1708212",
+                              "type":  "District",
+                              "nameUz":  "Sharof Rashidov tumani",
+                              "nameRu":  "Шароф Рашидовский район"
+                          },
+                          {
+                              "code":  "1708237",
+                              "type":  "District",
+                              "nameUz":  "Yangiobod tumani",
+                              "nameRu":  "Янгиабадский район"
+                          },
+                          {
+                              "code":  "1708225",
+                              "type":  "District",
+                              "nameUz":  "Zafarobod tumani",
+                              "nameRu":  "Зафарабадский район"
+                          },
+                          {
+                              "code":  "1708220",
+                              "type":  "District",
+                              "nameUz":  "Zarbdor tumani",
+                              "nameRu":  "Зарбдарский район"
+                          },
+                          {
+                              "code":  "1708218",
+                              "type":  "District",
+                              "nameUz":  "Zomin tumani",
+                              "nameRu":  "Зааминский район"
+                          }
+                      ]
+    },
+    {
+        "code":  "1714",
+        "nameUz":  "Namangan viloyati",
+        "nameRu":  "Наманганская область",
+        "districts":  [
+                          {
+                              "code":  "1714236",
+                              "type":  "District",
+                              "nameUz":  "Chortoq tumani",
+                              "nameRu":  "Чартакский район"
+                          },
+                          {
+                              "code":  "1714237",
+                              "type":  "District",
+                              "nameUz":  "Chust tumani",
+                              "nameRu":  "Чустский район"
+                          },
+                          {
+                              "code":  "1714365",
+                              "type":  "District",
+                              "nameUz":  "Davlatobod tumani",
+                              "nameRu":  "Давлатабадский район"
+                          },
+                          {
+                              "code":  "1714207",
+                              "type":  "District",
+                              "nameUz":  "Kosonsoy tumani",
+                              "nameRu":  "Касансайский район"
+                          },
+                          {
+                              "code":  "1714204",
+                              "type":  "District",
+                              "nameUz":  "Mingbuloq tumani",
+                              "nameRu":  "Мингбулакский район"
+                          },
+                          {
+                              "code":  "1714401",
+                              "type":  "City",
+                              "nameUz":  "Namangan shahri",
+                              "nameRu":  "г. Наманган"
+                          },
+                          {
+                              "code":  "1714212",
+                              "type":  "District",
+                              "nameUz":  "Namangan tumani",
+                              "nameRu":  "Наманганский район"
+                          },
+                          {
+                              "code":  "1714216",
+                              "type":  "District",
+                              "nameUz":  "Norin tumani",
+                              "nameRu":  "Нарынский район"
+                          },
+                          {
+                              "code":  "1714219",
+                              "type":  "District",
+                              "nameUz":  "Pop tumani",
+                              "nameRu":  "Папский район"
+                          },
+                          {
+                              "code":  "1714224",
+                              "type":  "District",
+                              "nameUz":  "To‘raqo‘rg‘on tumani",
+                              "nameRu":  "Туракурганский район"
+                          },
+                          {
+                              "code":  "1714234",
+                              "type":  "District",
+                              "nameUz":  "Uchqo‘rg‘on tumani",
+                              "nameRu":  "Учкурганский район"
+                          },
+                          {
+                              "code":  "1714229",
+                              "type":  "District",
+                              "nameUz":  "Uychi tumani",
+                              "nameRu":  "Уйчинский район"
+                          },
+                          {
+                              "code":  "1714367",
+                              "type":  "District",
+                              "nameUz":  "Yangi Namangan tumani",
+                              "nameRu":  "Янгинаманганский район"
+                          },
+                          {
+                              "code":  "1714242",
+                              "type":  "District",
+                              "nameUz":  "Yangiqo‘rg‘on tumani",
+                              "nameRu":  "Янгикурганский район"
+                          }
+                      ]
+    },
+    {
+        "code":  "1712",
+        "nameUz":  "Navoiy viloyati",
+        "nameRu":  "Навоийская область",
+        "districts":  [
+                          {
+                              "code":  "1712412",
+                              "type":  "District",
+                              "nameUz":  "G‘ozg‘on shahri",
+                              "nameRu":  "г. Газган"
+                          },
+                          {
+                              "code":  "1712234",
+                              "type":  "District",
+                              "nameUz":  "Karmana tumani",
+                              "nameRu":  "Карманинский район"
+                          },
+                          {
+                              "code":  "1712211",
+                              "type":  "District",
+                              "nameUz":  "Konimex tumani",
+                              "nameRu":  "Канимехский район"
+                          },
+                          {
+                              "code":  "1712230",
+                              "type":  "District",
+                              "nameUz":  "Navbahor tumani",
+                              "nameRu":  "Навбахорский район"
+                          },
+                          {
+                              "code":  "1712401",
+                              "type":  "City",
+                              "nameUz":  "Navoiy shahri",
+                              "nameRu":  "г. Навои"
+                          },
+                          {
+                              "code":  "1712238",
+                              "type":  "District",
+                              "nameUz":  "Nurota tumani",
+                              "nameRu":  "Нуратинский район"
+                          },
+                          {
+                              "code":  "1712216",
+                              "type":  "District",
+                              "nameUz":  "Qiziltepa tumani",
+                              "nameRu":  "Кызылтепинский район"
+                          },
+                          {
+                              "code":  "1712244",
+                              "type":  "District",
+                              "nameUz":  "Tomdi tumani",
+                              "nameRu":  "Тамдынский район"
+                          },
+                          {
+                              "code":  "1712248",
+                              "type":  "District",
+                              "nameUz":  "Uchquduq tumani",
+                              "nameRu":  "Учкудукский район"
+                          },
+                          {
+                              "code":  "1712251",
+                              "type":  "District",
+                              "nameUz":  "Xatirchi tumani",
+                              "nameRu":  "Хатырчинский район"
+                          },
+                          {
+                              "code":  "1712408",
+                              "type":  "City",
+                              "nameUz":  "Zarafshon shahri",
+                              "nameRu":  "г. Зарафшан"
+                          }
+                      ]
+    },
+    {
+        "code":  "1710",
+        "nameUz":  "Qashqadaryo viloyati",
+        "nameRu":  "Кашкадарьинская область",
+        "districts":  [
+                          {
+                              "code":  "1710242",
+                              "type":  "District",
+                              "nameUz":  "Chiroqchi tumani",
+                              "nameRu":  "Чиракчинский район"
+                          },
+                          {
+                              "code":  "1710212",
+                              "type":  "District",
+                              "nameUz":  "Dehqonobod tumani",
+                              "nameRu":  "Дехканабадский район"
+                          },
+                          {
+                              "code":  "1710207",
+                              "type":  "District",
+                              "nameUz":  "G‘uzor tumani",
+                              "nameRu":  "Гузарский район"
+                          },
+                          {
+                              "code":  "1710237",
+                              "type":  "District",
+                              "nameUz":  "Kasbi tumani",
+                              "nameRu":  "Касбинский район"
+                          },
+                          {
+                              "code":  "1710232",
+                              "type":  "District",
+                              "nameUz":  "Kitob tumani",
+                              "nameRu":  "Китабский район"
+                          },
+                          {
+                              "code":  "1710240",
+                              "type":  "District",
+                              "nameUz":  "Ko‘kdala tumani",
+                              "nameRu":  "Кукдалинский район"
+                          },
+                          {
+                              "code":  "1710229",
+                              "type":  "District",
+                              "nameUz":  "Koson tumani",
+                              "nameRu":  "Касанский район"
+                          },
+                          {
+                              "code":  "1710233",
+                              "type":  "District",
+                              "nameUz":  "Mirishkor tumani",
+                              "nameRu":  "Миришкорский район"
+                          },
+                          {
+                              "code":  "1710234",
+                              "type":  "District",
+                              "nameUz":  "Muborak tumani",
+                              "nameRu":  "Мубарекский район"
+                          },
+                          {
+                              "code":  "1710235",
+                              "type":  "District",
+                              "nameUz":  "Nishon tumani",
+                              "nameRu":  "Нишанский район"
+                          },
+                          {
+                              "code":  "1710220",
+                              "type":  "District",
+                              "nameUz":  "Qamashi tumani",
+                              "nameRu":  "Камашинский район"
+                          },
+                          {
+                              "code":  "1710401",
+                              "type":  "City",
+                              "nameUz":  "Qarshi shahri",
+                              "nameRu":  "г. Карши"
+                          },
+                          {
+                              "code":  "1710224",
+                              "type":  "District",
+                              "nameUz":  "Qarshi tumani",
+                              "nameRu":  "Каршинский район"
+                          },
+                          {
+                              "code":  "1710405",
+                              "type":  "District",
+                              "nameUz":  "Shahrisabz shahri",
+                              "nameRu":  "г. Шахрисабз"
+                          },
+                          {
+                              "code":  "1710245",
+                              "type":  "District",
+                              "nameUz":  "Shahrisabz tumani",
+                              "nameRu":  "Шахрисабзский район"
+                          },
+                          {
+                              "code":  "1710250",
+                              "type":  "District",
+                              "nameUz":  "Yakkabog‘ tumani",
+                              "nameRu":  "Яккабагский район"
+                          }
+                      ]
+    },
+    {
+        "code":  "1735",
+        "nameUz":  "Qoraqalpog‘iston Respublikasi",
+        "nameRu":  "Республика Каракалпакстан",
+        "districts":  [
+                          {
+                              "code":  "1735204",
+                              "type":  "District",
+                              "nameUz":  "Amudaryo tumani",
+                              "nameRu":  "Амударьинский район"
+                          },
+                          {
+                              "code":  "1735207",
+                              "type":  "District",
+                              "nameUz":  "Beruniy tumani",
+                              "nameRu":  "Берунийский район"
+                          },
+                          {
+                              "code":  "1735209",
+                              "type":  "District",
+                              "nameUz":  "Bo‘zatov tumani",
+                              "nameRu":  "Бозатауский район"
+                          },
+                          {
+                              "code":  "1735240",
+                              "type":  "District",
+                              "nameUz":  "Chimboy tumani",
+                              "nameRu":  "Чимбайский район"
+                          },
+                          {
+                              "code":  "1735250",
+                              "type":  "District",
+                              "nameUz":  "Ellikqalʼa tumani",
+                              "nameRu":  "Элликкалинский район"
+                          },
+                          {
+                              "code":  "1735212",
+                              "type":  "District",
+                              "nameUz":  "Kegeyli tumani",
+                              "nameRu":  "Кегейлийский район"
+                          },
+                          {
+                              "code":  "1735222",
+                              "type":  "District",
+                              "nameUz":  "Mo‘ynoq tumani",
+                              "nameRu":  "Муйнакский район"
+                          },
+                          {
+                              "code":  "1735401",
+                              "type":  "City",
+                              "nameUz":  "Nukus shahri",
+                              "nameRu":  "г. Нукус"
+                          },
+                          {
+                              "code":  "1735225",
+                              "type":  "District",
+                              "nameUz":  "Nukus tumani",
+                              "nameRu":  "Нукусский район"
+                          },
+                          {
+                              "code":  "1735218",
+                              "type":  "District",
+                              "nameUz":  "Qanliko‘l tumani",
+                              "nameRu":  "Канлыкульский район"
+                          },
+                          {
+                              "code":  "1735215",
+                              "type":  "District",
+                              "nameUz":  "Qo‘ng‘irot tumani",
+                              "nameRu":  "Кунградский район"
+                          },
+                          {
+                              "code":  "1735211",
+                              "type":  "District",
+                              "nameUz":  "Qorao‘zak tumani",
+                              "nameRu":  "Караузякский район"
+                          },
+                          {
+                              "code":  "1735243",
+                              "type":  "District",
+                              "nameUz":  "Shumanay tumani",
+                              "nameRu":  "Шуманайский район"
+                          },
+                          {
+                              "code":  "1735228",
+                              "type":  "District",
+                              "nameUz":  "Taxiatosh tumani",
+                              "nameRu":  "Тахиаташский район"
+                          },
+                          {
+                              "code":  "1735230",
+                              "type":  "District",
+                              "nameUz":  "Taxtako‘pir tumani",
+                              "nameRu":  "Тахтакупырский район"
+                          },
+                          {
+                              "code":  "1735233",
+                              "type":  "District",
+                              "nameUz":  "To‘rtko‘l tumani",
+                              "nameRu":  "Турткульский район"
+                          },
+                          {
+                              "code":  "1735236",
+                              "type":  "District",
+                              "nameUz":  "Xo‘jayli tumani",
+                              "nameRu":  "Ходжейлийский район"
+                          }
+                      ]
+    },
+    {
+        "code":  "1718",
+        "nameUz":  "Samarqand viloyati",
+        "nameRu":  "Самаркандская область",
+        "districts":  [
+                          {
+                              "code":  "1718206",
+                              "type":  "District",
+                              "nameUz":  "Bulung‘ur tumani",
+                              "nameRu":  "Булунгурский район"
+                          },
+                          {
+                              "code":  "1718212",
+                              "type":  "District",
+                              "nameUz":  "Ishtixon tumani",
+                              "nameRu":  "Иштыханский район"
+                          },
+                          {
+                              "code":  "1718209",
+                              "type":  "District",
+                              "nameUz":  "Jomboy tumani",
+                              "nameRu":  "Джамбайский район"
+                          },
+                          {
+                              "code":  "1718406",
+                              "type":  "City",
+                              "nameUz":  "Kattaqo‘rg‘on shahri",
+                              "nameRu":  "г. Каттакурган"
+                          },
+                          {
+                              "code":  "1718215",
+                              "type":  "District",
+                              "nameUz":  "Kattaqo‘rg‘on tumani",
+                              "nameRu":  "Каттакурганский район"
+                          },
+                          {
+                              "code":  "1718218",
+                              "type":  "District",
+                              "nameUz":  "Narpay tumani",
+                              "nameRu":  "Нарпайский район"
+                          },
+                          {
+                              "code":  "1718235",
+                              "type":  "District",
+                              "nameUz":  "Nurobod tumani",
+                              "nameRu":  "Нурабадский район"
+                          },
+                          {
+                              "code":  "1718203",
+                              "type":  "District",
+                              "nameUz":  "Oqdaryo tumani",
+                              "nameRu":  "Акдарьинский район"
+                          },
+                          {
+                              "code":  "1718227",
+                              "type":  "District",
+                              "nameUz":  "Pastdarg‘om tumani",
+                              "nameRu":  "Пастдаргомский район"
+                          },
+                          {
+                              "code":  "1718230",
+                              "type":  "District",
+                              "nameUz":  "Paxtachi tumani",
+                              "nameRu":  "Пахтачийский район"
+                          },
+                          {
+                              "code":  "1718224",
+                              "type":  "District",
+                              "nameUz":  "Payariq tumani",
+                              "nameRu":  "Пайарыкский район"
+                          },
+                          {
+                              "code":  "1718216",
+                              "type":  "District",
+                              "nameUz":  "Qo‘shrabot tumani",
+                              "nameRu":  "Кошрабадский район"
+                          },
+                          {
+                              "code":  "1718401",
+                              "type":  "City",
+                              "nameUz":  "Samarqand shahri",
+                              "nameRu":  "г. Самарканд"
+                          },
+                          {
+                              "code":  "1718233",
+                              "type":  "District",
+                              "nameUz":  "Samarqand tumani",
+                              "nameRu":  "Самаркандский район"
+                          },
+                          {
+                              "code":  "1718238",
+                              "type":  "District",
+                              "nameUz":  "Tayloq tumani",
+                              "nameRu":  "Тайлякский район"
+                          },
+                          {
+                              "code":  "1718236",
+                              "type":  "District",
+                              "nameUz":  "Urgut tumani",
+                              "nameRu":  "Ургутский район"
+                          }
+                      ]
+    },
+    {
+        "code":  "1724",
+        "nameUz":  "Sirdaryo viloyati",
+        "nameRu":  "Сырдарьинская область",
+        "districts":  [
+                          {
+                              "code":  "1724212",
+                              "type":  "District",
+                              "nameUz":  "Boyovut tumani",
+                              "nameRu":  "Баяутский район"
+                          },
+                          {
+                              "code":  "1724401",
+                              "type":  "City",
+                              "nameUz":  "Guliston shahri",
+                              "nameRu":  "г. Гулистан"
+                          },
+                          {
+                              "code":  "1724220",
+                              "type":  "District",
+                              "nameUz":  "Guliston tumani",
+                              "nameRu":  "Гулистанский район"
+                          },
+                          {
+                              "code":  "1724228",
+                              "type":  "District",
+                              "nameUz":  "Mirzaobod tumani",
+                              "nameRu":  "Мирзаабадский район"
+                          },
+                          {
+                              "code":  "1724206",
+                              "type":  "District",
+                              "nameUz":  "Oqoltin tumani",
+                              "nameRu":  "Акалтынский район"
+                          },
+                          {
+                              "code":  "1724226",
+                              "type":  "District",
+                              "nameUz":  "Sardoba tumani",
+                              "nameRu":  "Сардабинский район"
+                          },
+                          {
+                              "code":  "1724216",
+                              "type":  "District",
+                              "nameUz":  "Sayxunobod tumani",
+                              "nameRu":  "Сайхунабадский район"
+                          },
+                          {
+                              "code":  "1724410",
+                              "type":  "City",
+                              "nameUz":  "Shirin shahri",
+                              "nameRu":  "г. Ширин"
+                          },
+                          {
+                              "code":  "1724231",
+                              "type":  "District",
+                              "nameUz":  "Sirdaryo tumani",
+                              "nameRu":  "Сырдарьинский район"
+                          },
+                          {
+                              "code":  "1724235",
+                              "type":  "District",
+                              "nameUz":  "Xovos tumani",
+                              "nameRu":  "Хавастский район"
+                          },
+                          {
+                              "code":  "1724413",
+                              "type":  "City",
+                              "nameUz":  "Yangiyer shahri",
+                              "nameRu":  "г. Янгиер"
+                          }
+                      ]
+    },
+    {
+        "code":  "1722",
+        "nameUz":  "Surxondaryo viloyati",
+        "nameRu":  "Сурхандарьинская область",
+        "districts":  [
+                          {
+                              "code":  "1722202",
+                              "type":  "District",
+                              "nameUz":  "Angor tumani",
+                              "nameRu":  "Ангорский район"
+                          },
+                          {
+                              "code":  "1722203",
+                              "type":  "District",
+                              "nameUz":  "Bandixon tumani",
+                              "nameRu":  "Бандиханский район"
+                          },
+                          {
+                              "code":  "1722204",
+                              "type":  "District",
+                              "nameUz":  "Boysun tumani",
+                              "nameRu":  "Байсунский район"
+                          },
+                          {
+                              "code":  "1722210",
+                              "type":  "District",
+                              "nameUz":  "Denov tumani",
+                              "nameRu":  "Денауский район"
+                          },
+                          {
+                              "code":  "1722212",
+                              "type":  "District",
+                              "nameUz":  "Jarqo‘rg‘on tumani",
+                              "nameRu":  "Джаркурганский район"
+                          },
+                          {
+                              "code":  "1722207",
+                              "type":  "District",
+                              "nameUz":  "Muzrabot tumani",
+                              "nameRu":  "Музрабадский район"
+                          },
+                          {
+                              "code":  "1722201",
+                              "type":  "District",
+                              "nameUz":  "Oltinsoy tumani",
+                              "nameRu":  "Алтынсайский район"
+                          },
+                          {
+                              "code":  "1722215",
+                              "type":  "District",
+                              "nameUz":  "Qiziriq tumani",
+                              "nameRu":  "Кизирикский район"
+                          },
+                          {
+                              "code":  "1722214",
+                              "type":  "District",
+                              "nameUz":  "Qumqo‘rg‘on tumani",
+                              "nameRu":  "Кумкурганский район"
+                          },
+                          {
+                              "code":  "1722217",
+                              "type":  "District",
+                              "nameUz":  "Sariosiyo tumani",
+                              "nameRu":  "Сариасийский район"
+                          },
+                          {
+                              "code":  "1722223",
+                              "type":  "District",
+                              "nameUz":  "Sherobod tumani",
+                              "nameRu":  "Шерабадский район"
+                          },
+                          {
+                              "code":  "1722226",
+                              "type":  "District",
+                              "nameUz":  "Sho‘rchi tumani",
+                              "nameRu":  "Шурчинский район"
+                          },
+                          {
+                              "code":  "1722401",
+                              "type":  "City",
+                              "nameUz":  "Termiz shahri",
+                              "nameRu":  "г. Термез"
+                          },
+                          {
+                              "code":  "1722220",
+                              "type":  "District",
+                              "nameUz":  "Termiz tumani",
+                              "nameRu":  "Термезский район"
+                          },
+                          {
+                              "code":  "1722221",
+                              "type":  "District",
+                              "nameUz":  "Uzun tumani",
+                              "nameRu":  "Узунский район"
+                          }
+                      ]
+    },
+    {
+        "code":  "1726",
+        "nameUz":  "Toshkent shahri",
+        "nameRu":  "Город Ташкент",
+        "districts":  [
+                          {
+                              "code":  "1726264",
+                              "type":  "District",
+                              "nameUz":  "Bektemir tumani",
+                              "nameRu":  "Бектемирский район"
+                          },
+                          {
+                              "code":  "1726294",
+                              "type":  "District",
+                              "nameUz":  "Chilonzor tumani",
+                              "nameRu":  "Чиланзарский район"
+                          },
+                          {
+                              "code":  "1726273",
+                              "type":  "District",
+                              "nameUz":  "Mirobod tumani",
+                              "nameRu":  "Мирабадский район"
+                          },
+                          {
+                              "code":  "1726269",
+                              "type":  "District",
+                              "nameUz":  "Mirzo Ulug‘bek tumani",
+                              "nameRu":  "Мирзо-Улугбекский район"
+                          },
+                          {
+                              "code":  "1726280",
+                              "type":  "District",
+                              "nameUz":  "Olmazor tumani",
+                              "nameRu":  "Алмазарский район"
+                          },
+                          {
+                              "code":  "1726277",
+                              "type":  "District",
+                              "nameUz":  "Shayxontohur tumani",
+                              "nameRu":  "Шайхантахурский район"
+                          },
+                          {
+                              "code":  "1726283",
+                              "type":  "District",
+                              "nameUz":  "Sirg‘ali tumani",
+                              "nameRu":  "Сергелийский район"
+                          },
+                          {
+                              "code":  "1726262",
+                              "type":  "District",
+                              "nameUz":  "Uchtepa tumani",
+                              "nameRu":  "Учтепинский район"
+                          },
+                          {
+                              "code":  "1726287",
+                              "type":  "District",
+                              "nameUz":  "Yakkasaroy tumani",
+                              "nameRu":  "Яккасарайский район"
+                          },
+                          {
+                              "code":  "1726292",
+                              "type":  "District",
+                              "nameUz":  "Yangihayot tumani",
+                              "nameRu":  "Янгихаятский район"
+                          },
+                          {
+                              "code":  "1726290",
+                              "type":  "District",
+                              "nameUz":  "Yashnobod tumani",
+                              "nameRu":  "Яшнаабадский район"
+                          },
+                          {
+                              "code":  "1726266",
+                              "type":  "District",
+                              "nameUz":  "Yunusobod tumani",
+                              "nameRu":  "Юнусабадский район"
+                          }
+                      ]
+    },
+    {
+        "code":  "1727",
+        "nameUz":  "Toshkent viloyati",
+        "nameRu":  "Ташкентская область",
+        "districts":  [
+                          {
+                              "code":  "1727407",
+                              "type":  "City",
+                              "nameUz":  "Angren shahri",
+                              "nameRu":  "г. Ангрен"
+                          },
+                          {
+                              "code":  "1727413",
+                              "type":  "City",
+                              "nameUz":  "Bekobod shahri",
+                              "nameRu":  "г. Бекабад"
+                          },
+                          {
+                              "code":  "1727220",
+                              "type":  "District",
+                              "nameUz":  "Bekobod tumani",
+                              "nameRu":  "Бекабадский район"
+                          },
+                          {
+                              "code":  "1727228",
+                              "type":  "District",
+                              "nameUz":  "Bo‘ka tumani",
+                              "nameRu":  "Букинский район"
+                          },
+                          {
+                              "code":  "1727224",
+                              "type":  "District",
+                              "nameUz":  "Bo‘stonliq tumani",
+                              "nameRu":  "Бостанлыкский район"
+                          },
+                          {
+                              "code":  "1727256",
+                              "type":  "District",
+                              "nameUz":  "Chinoz tumani",
+                              "nameRu":  "Чиназский район"
+                          },
+                          {
+                              "code":  "1727419",
+                              "type":  "City",
+                              "nameUz":  "Chirchiq shahri",
+                              "nameRu":  "г. Чирчик"
+                          },
+                          {
+                              "code":  "1727401",
+                              "type":  "City",
+                              "nameUz":  "Nurafshon shahri",
+                              "nameRu":  "г. Нурафшан"
+                          },
+                          {
+                              "code":  "1727253",
+                              "type":  "District",
+                              "nameUz":  "O‘rtachirchiq tumani",
+                              "nameRu":  "Уртачирчикский район"
+                          },
+                          {
+                              "code":  "1727415",
+                              "type":  "City",
+                              "nameUz":  "Ohangaron shahri",
+                              "nameRu":  "г. Ахангаран"
+                          },
+                          {
+                              "code":  "1727212",
+                              "type":  "District",
+                              "nameUz":  "Ohangaron tumani",
+                              "nameRu":  "Ахангаранский район"
+                          },
+                          {
+                              "code":  "1727404",
+                              "type":  "City",
+                              "nameUz":  "Olmaliq shahri",
+                              "nameRu":  "г. Алмалык"
+                          },
+                          {
+                              "code":  "1727206",
+                              "type":  "District",
+                              "nameUz":  "Oqqo‘rg‘on tumani",
+                              "nameRu":  "Аккурганский район"
+                          },
+                          {
+                              "code":  "1727249",
+                              "type":  "District",
+                              "nameUz":  "Parkent tumani",
+                              "nameRu":  "Паркентский район"
+                          },
+                          {
+                              "code":  "1727250",
+                              "type":  "District",
+                              "nameUz":  "Piskent tumani",
+                              "nameRu":  "Пискентский район"
+                          },
+                          {
+                              "code":  "1727248",
+                              "type":  "District",
+                              "nameUz":  "Qibray tumani",
+                              "nameRu":  "Кибрайский район"
+                          },
+                          {
+                              "code":  "1727233",
+                              "type":  "District",
+                              "nameUz":  "Quyichirchiq tumani",
+                              "nameRu":  "Куйичирчикский район"
+                          },
+                          {
+                              "code":  "1727265",
+                              "type":  "District",
+                              "nameUz":  "Toshkent tumani",
+                              "nameRu":  "Ташкентский район"
+                          },
+                          {
+                              "code":  "1727424",
+                              "type":  "City",
+                              "nameUz":  "Yangiyo‘l shahri",
+                              "nameRu":  "г. Янгиюль"
+                          },
+                          {
+                              "code":  "1727259",
+                              "type":  "District",
+                              "nameUz":  "Yangiyo‘l tumani",
+                              "nameRu":  "Янгиюльский район"
+                          },
+                          {
+                              "code":  "1727239",
+                              "type":  "District",
+                              "nameUz":  "Yuqorichirchiq tumani",
+                              "nameRu":  "Юкоричирчикский район"
+                          },
+                          {
+                              "code":  "1727237",
+                              "type":  "District",
+                              "nameUz":  "Zangiota tumani",
+                              "nameRu":  "Зангиатинский район"
+                          }
+                      ]
+    },
+    {
+        "code":  "1733",
+        "nameUz":  "Xorazm viloyati",
+        "nameRu":  "Хорезмская область",
+        "districts":  [
+                          {
+                              "code":  "1733204",
+                              "type":  "District",
+                              "nameUz":  "Bog‘ot tumani",
+                              "nameRu":  "Багатский район"
+                          },
+                          {
+                              "code":  "1733208",
+                              "type":  "District",
+                              "nameUz":  "Gurlan tumani",
+                              "nameRu":  "Гурленский район"
+                          },
+                          {
+                              "code":  "1733212",
+                              "type":  "District",
+                              "nameUz":  "Qo‘shko‘pir tumani",
+                              "nameRu":  "Кошкупырский район"
+                          },
+                          {
+                              "code":  "1733230",
+                              "type":  "District",
+                              "nameUz":  "Shovot tumani",
+                              "nameRu":  "Шаватский район"
+                          },
+                          {
+                              "code":  "1733221",
+                              "type":  "District",
+                              "nameUz":  "Tuproqqalʼa tumani",
+                              "nameRu":  "Тупроккалинский район"
+                          },
+                          {
+                              "code":  "1733401",
+                              "type":  "City",
+                              "nameUz":  "Urganch shahri",
+                              "nameRu":  "г. Ургенч"
+                          },
+                          {
+                              "code":  "1733217",
+                              "type":  "District",
+                              "nameUz":  "Urganch tumani",
+                              "nameRu":  "Ургенчский район"
+                          },
+                          {
+                              "code":  "1733220",
+                              "type":  "District",
+                              "nameUz":  "Xazorasp tumani",
+                              "nameRu":  "Хазараспский район"
+                          },
+                          {
+                              "code":  "1733406",
+                              "type":  "City",
+                              "nameUz":  "Xiva shahri",
+                              "nameRu":  "г. Хива"
+                          },
+                          {
+                              "code":  "1733226",
+                              "type":  "District",
+                              "nameUz":  "Xiva tumani",
+                              "nameRu":  "Хивинский район"
+                          },
+                          {
+                              "code":  "1733223",
+                              "type":  "District",
+                              "nameUz":  "Xonqa tumani",
+                              "nameRu":  "Ханкинский район"
+                          },
+                          {
+                              "code":  "1733233",
+                              "type":  "District",
+                              "nameUz":  "Yangiariq tumani",
+                              "nameRu":  "Янгиарыкский район"
+                          },
+                          {
+                              "code":  "1733236",
+                              "type":  "District",
+                              "nameUz":  "Yangibozor tumani",
+                              "nameRu":  "Янгибазарский район"
+                          }
+                      ]
+    }
+]

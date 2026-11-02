@@ -1,3 +1,5 @@
+using PharmaTrack.Domain.Enums;
+
 namespace PharmaTrack.Application.Features.Analytics;
 
 public sealed class AlertOptions
@@ -16,8 +18,8 @@ public record AnalyticsFilter
 {
     public DateOnly? From { get; init; }
     public DateOnly? To { get; init; }
-    /// <summary>A province includes all of its districts.</summary>
     public Guid? RegionId { get; init; }
+    public Guid? DistrictId { get; init; }
     public Guid? DealerId { get; init; }
     public Guid? ProductId { get; init; }
 }
@@ -34,8 +36,8 @@ public enum StockHealth { Stockout, Critical, Healthy, Overstock, NoSales }
 public enum ReportingStatus { OnTime, Late, NeverReported }
 public enum AttentionSeverity { Critical, Warning, Info }
 public enum AttentionType { DealerNotReporting, ShipmentStuck, OpenDiscrepancy, ExpiredStock, ProductStockout, PendingAdjustment, PendingPharmacy }
-public enum SalesGroupBy { Day, Week, Month, Province, District, Dealer, Pharmacy, Product }
-public enum StockGroupBy { Location, Province, Product, Batch }
+public enum SalesGroupBy { Day, Week, Month, Region, District, Dealer, Pharmacy, Product }
+public enum StockGroupBy { Location, Region, Product, Batch }
 
 public sealed record KpiDto(decimal Value, decimal PreviousValue, decimal? ChangePercent);
 public sealed record DashboardKpis(
@@ -56,8 +58,9 @@ public sealed record DashboardKpis(
     int OpenDiscrepancies);
 public sealed record TrendPoint(DateOnly Date, decimal Amount, int Units, decimal PreviousAmount);
 public sealed record RegionRow(Guid RegionId, string Name, string NameRu, decimal SalesAmount, int SalesUnits, decimal SharePercent, decimal? ChangePercent, int StockUnits, decimal StockValue, decimal? DaysOfStock, int DealerCount, int PharmacyCount);
+public sealed record DistrictRow(Guid DistrictId, string Name, string NameRu, DistrictType Type, decimal SalesAmount, int SalesUnits, decimal SharePercent, decimal? ChangePercent, int StockUnits, decimal? DaysOfStock, int DealerCount, int PharmacyCount);
 public sealed record ProductRow(Guid ProductId, string Name, decimal SalesAmount, int SalesUnits, decimal SharePercent, decimal? ChangePercent, int StockUnits, decimal? DaysOfStock, StockHealth Health);
-public sealed record DealerRow(Guid DealerId, string Name, Guid RegionId, string RegionName, decimal SalesAmount, int SalesUnits, decimal? ChangePercent, int StockUnits, decimal? StockValue, decimal? DaysOfStock, int ExpiringUnits, DateOnly? LastSaleDate, int? DaysSinceLastSale, ReportingStatus Reporting);
+public sealed record DealerRow(Guid DealerId, string Name, Guid RegionId, string RegionName, Guid? DistrictId, string? DistrictName, decimal SalesAmount, int SalesUnits, decimal? ChangePercent, int StockUnits, decimal? StockValue, decimal? DaysOfStock, int ExpiringUnits, DateOnly? LastSaleDate, int? DaysSinceLastSale, ReportingStatus Reporting);
 public sealed record StockDistribution(int CentralUnits, decimal CentralValue, int DealerUnits, decimal DealerValue, int InTransitUnits, decimal InTransitValue);
 public sealed record ExpiryBucket(string Key, int Units, decimal Value);
 public sealed record HealthBucket(StockHealth Health, int Products, int Units, decimal Value);
@@ -69,6 +72,7 @@ public sealed record DashboardDto(
     DashboardKpis Kpis,
     IReadOnlyList<TrendPoint> SalesTrend,
     IReadOnlyList<RegionRow> Regions,
+    IReadOnlyList<DistrictRow> Districts,
     IReadOnlyList<ProductRow> TopProducts,
     IReadOnlyList<DealerRow> Dealers,
     StockDistribution Distribution,

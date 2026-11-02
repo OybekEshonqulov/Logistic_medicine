@@ -12,7 +12,7 @@ using PharmaTrack.Infrastructure.Persistence;
 namespace PharmaTrack.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261102052116_InitialSchema")]
+    [Migration("20261102054837_InitialSchema")]
     partial class InitialSchema
     {
         /// <inheritdoc />
@@ -138,6 +138,10 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<Guid?>("DistrictId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("district_id");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
@@ -165,10 +169,32 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_dealers");
 
+                    b.HasIndex("DistrictId")
+                        .HasDatabaseName("ix_dealers_district_id");
+
                     b.HasIndex("RegionId")
                         .HasDatabaseName("ix_dealers_region_id");
 
                     b.ToTable("dealers", (string)null);
+                });
+
+            modelBuilder.Entity("PharmaTrack.Domain.Entities.DealerDistrict", b =>
+                {
+                    b.Property<Guid>("DealerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("dealer_id");
+
+                    b.Property<Guid>("DistrictId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("district_id");
+
+                    b.HasKey("DealerId", "DistrictId")
+                        .HasName("pk_dealer_district");
+
+                    b.HasIndex("DistrictId")
+                        .HasDatabaseName("ix_dealer_district_district_id");
+
+                    b.ToTable("dealer_district", (string)null);
                 });
 
             modelBuilder.Entity("PharmaTrack.Domain.Entities.DealerRegion", b =>
@@ -188,6 +214,66 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_dealer_region_region_id");
 
                     b.ToTable("dealer_region", (string)null);
+                });
+
+            modelBuilder.Entity("PharmaTrack.Domain.Entities.District", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("NameRu")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("name_ru");
+
+                    b.Property<string>("NameUz")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("name_uz");
+
+                    b.Property<Guid>("RegionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("region_id");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("type");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_districts");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ix_districts_code");
+
+                    b.HasIndex("RegionId", "NameUz")
+                        .IsUnique()
+                        .HasDatabaseName("ix_districts_region_id_name_uz");
+
+                    b.ToTable("districts", (string)null);
                 });
 
             modelBuilder.Entity("PharmaTrack.Domain.Entities.Manufacturer", b =>
@@ -301,6 +387,10 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<Guid?>("DistrictId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("district_id");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
@@ -336,6 +426,9 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_pharmacies");
+
+                    b.HasIndex("DistrictId")
+                        .HasDatabaseName("ix_pharmacies_district_id");
 
                     b.HasIndex("RegionId")
                         .HasDatabaseName("ix_pharmacies_region_id");
@@ -549,6 +642,11 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("Code")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("code");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -569,16 +667,6 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(150)")
                         .HasColumnName("name_uz");
 
-                    b.Property<Guid?>("ParentId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("parent_id");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)")
-                        .HasColumnName("type");
-
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
@@ -586,8 +674,13 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_regions");
 
-                    b.HasIndex("ParentId")
-                        .HasDatabaseName("ix_regions_parent_id");
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ix_regions_code");
+
+                    b.HasIndex("NameUz")
+                        .IsUnique()
+                        .HasDatabaseName("ix_regions_name_uz");
 
                     b.ToTable("regions", (string)null);
                 });
@@ -1280,6 +1373,12 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("PharmaTrack.Domain.Entities.Dealer", b =>
                 {
+                    b.HasOne("PharmaTrack.Domain.Entities.District", "District")
+                        .WithMany()
+                        .HasForeignKey("DistrictId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_dealers_districts_district_id");
+
                     b.HasOne("PharmaTrack.Domain.Entities.Region", "Region")
                         .WithMany()
                         .HasForeignKey("RegionId")
@@ -1287,7 +1386,28 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_dealers_regions_region_id");
 
+                    b.Navigation("District");
+
                     b.Navigation("Region");
+                });
+
+            modelBuilder.Entity("PharmaTrack.Domain.Entities.DealerDistrict", b =>
+                {
+                    b.HasOne("PharmaTrack.Domain.Entities.Dealer", null)
+                        .WithMany("ServiceDistricts")
+                        .HasForeignKey("DealerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_dealer_district_dealers_dealer_id");
+
+                    b.HasOne("PharmaTrack.Domain.Entities.District", "District")
+                        .WithMany()
+                        .HasForeignKey("DistrictId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_dealer_district_districts_district_id");
+
+                    b.Navigation("District");
                 });
 
             modelBuilder.Entity("PharmaTrack.Domain.Entities.DealerRegion", b =>
@@ -1309,6 +1429,18 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
                     b.Navigation("Region");
                 });
 
+            modelBuilder.Entity("PharmaTrack.Domain.Entities.District", b =>
+                {
+                    b.HasOne("PharmaTrack.Domain.Entities.Region", "Region")
+                        .WithMany()
+                        .HasForeignKey("RegionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_districts_regions_region_id");
+
+                    b.Navigation("Region");
+                });
+
             modelBuilder.Entity("PharmaTrack.Domain.Entities.Notification", b =>
                 {
                     b.HasOne("PharmaTrack.Domain.Entities.User", null)
@@ -1321,6 +1453,12 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("PharmaTrack.Domain.Entities.Pharmacy", b =>
                 {
+                    b.HasOne("PharmaTrack.Domain.Entities.District", "District")
+                        .WithMany()
+                        .HasForeignKey("DistrictId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_pharmacies_districts_district_id");
+
                     b.HasOne("PharmaTrack.Domain.Entities.Region", "Region")
                         .WithMany()
                         .HasForeignKey("RegionId")
@@ -1333,6 +1471,8 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
                         .HasForeignKey("RequestedByDealerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_pharmacies_dealers_requested_by_dealer_id");
+
+                    b.Navigation("District");
 
                     b.Navigation("Region");
                 });
@@ -1390,17 +1530,6 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_refresh_tokens_users_user_id");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("PharmaTrack.Domain.Entities.Region", b =>
-                {
-                    b.HasOne("PharmaTrack.Domain.Entities.Region", "Parent")
-                        .WithMany()
-                        .HasForeignKey("ParentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_regions_regions_parent_id");
-
-                    b.Navigation("Parent");
                 });
 
             modelBuilder.Entity("PharmaTrack.Domain.Entities.Sale", b =>
@@ -1633,6 +1762,8 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("PharmaTrack.Domain.Entities.Dealer", b =>
                 {
+                    b.Navigation("ServiceDistricts");
+
                     b.Navigation("ServiceRegions");
                 });
 

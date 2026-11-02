@@ -3,10 +3,10 @@
 Bitta so'rov butun ekranni to'ldiradi, shuning uchun hamma raqam bir vaqtga tegishli va bir-biriga mos bo'ladi:
 
 ```
-GET /api/v1/analytics/dashboard?from=2026-10-01&to=2026-10-31&regionId=&dealerId=&productId=
+GET /api/v1/analytics/dashboard?from=2026-10-01&to=2026-10-31&regionId=&districtId=&dealerId=&productId=
 ```
 
-Filtrlarning hammasi ixtiyoriy, standart davr oxirgi 30 kun. `regionId` viloyat bo'lsa, uning tumanlari ham kiradi. Faqat `Admin` va `Executive` uchun (`analytics.dashboard` ruxsati).
+Filtrlarning hammasi ixtiyoriy, standart davr oxirgi 30 kun. `regionId` tanlansa, javobda `districts[]` ham to'ladi. Faqat `Admin` va `Executive` uchun (`analytics.dashboard` ruxsati).
 
 ## Ekran va maydonlar
 
@@ -20,6 +20,7 @@ Filtrlarning hammasi ixtiyoriy, standart davr oxirgi 30 kun. `regionId` viloyat 
 | Yo'qotish xavfi | `kpis.expiringValue`, `expiredValue`, `writeOffValue`, `openDiscrepancies` | Pul ko'rinishidagi xavf |
 | Sotuv grafigi | `salesTrend[]`, `granularity` | `amount`, `units`, `previousAmount`; davrga qarab kun, hafta yoki oy |
 | Hududlar xaritasi yoki reytingi | `regions[]` | Viloyat bo'yicha sotuv, ulush, o'sish, qoldiq, zaxira kuni, diler va dorixona soni |
+| Tumanlar kesimi | `districts[]` | Hudud tanlanganda: har bir tuman va shahar bo'yicha sotuv, ulush, o'sish, qoldiq |
 | Top dorilar | `topProducts[]` | Eng ko'p sotilgan 10 ta dori va holati |
 | Dilerlar jadvali | `dealers[]` | Sotuv, o'sish, qoldiq, zaxira, oxirgi sotuv, `reporting` holati |
 | Qoldiq taqsimoti | `distribution` | Markaz, dilerlar va yo'ldagi tovar |
@@ -33,7 +34,7 @@ Filtrlarning hammasi ixtiyoriy, standart davr oxirgi 30 kun. `regionId` viloyat 
 - **Foyda** = sotuv summasi − partiyaning kirim narxi. Bu dilerning dorixonaga sotgan narxidan kelib chiqadi.
 - **Zaxira kuni** = qoldiq ÷ (davrdagi sotuv ÷ davr kunlari).
 - **Qiymat** kirim narxida hisoblanadi.
-- **Hudud filtri** tanlansa, markaziy ombor qoldig'i kirmaydi, chunki u hech qaysi hududga tegishli emas.
+- **Hudud yoki tuman filtri** tanlansa, markaziy ombor qoldig'i kirmaydi, chunki u hech qaysi hududga tegishli emas.
 
 ## Chegaralar `appsettings.json` da (`Alerts`)
 
@@ -51,8 +52,8 @@ Dashboard'dan chuqurroq ko'rish uchun:
 
 | Endpoint | Natija |
 |---|---|
-| `analytics/sales?groupBy=` | `Day`, `Week`, `Month`, `Province`, `District`, `Dealer`, `Pharmacy`, `Product` |
-| `analytics/stock?groupBy=` | `Location`, `Province`, `Product`, `Batch` |
+| `analytics/sales?groupBy=` | `Day`, `Week`, `Month`, `Region`, `District`, `Dealer`, `Pharmacy`, `Product` |
+| `analytics/stock?groupBy=` | `Location`, `Region`, `Product`, `Batch` |
 | `analytics/expiring?withinDays=` | Muddati yaqin partiyalar |
 | `analytics/days-of-stock` | Har bir dorining zaxira kuni va holati |
 | `analytics/dead-stock?days=60` | Shuncha kun sotilmagan tovar |

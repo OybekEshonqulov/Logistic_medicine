@@ -8,7 +8,7 @@ namespace PharmaTrack.Api.Controllers;
 public sealed class RegionsController(RegionService regions) : ApiController
 {
     [HttpGet]
-    public Task<PagedResult<RegionDto>> List([FromQuery] RegionQuery query, CancellationToken ct) => regions.ListAsync(query, ct);
+    public Task<PagedResult<RegionDto>> List([FromQuery] PageQuery query, CancellationToken ct) => regions.ListAsync(query, ct);
 
     [HttpGet("{id:guid}")]
     public Task<RegionDto> Get(Guid id, CancellationToken ct) => regions.GetAsync(id, ct);
@@ -27,6 +27,32 @@ public sealed class RegionsController(RegionService regions) : ApiController
     public async Task<IActionResult> Deactivate(Guid id, CancellationToken ct)
     {
         await regions.DeactivateAsync(id, ct);
+        return NoContent();
+    }
+}
+
+public sealed class DistrictsController(DistrictService districts) : ApiController
+{
+    [HttpGet]
+    public Task<PagedResult<DistrictDto>> List([FromQuery] DistrictQuery query, CancellationToken ct) => districts.ListAsync(query, ct);
+
+    [HttpGet("{id:guid}")]
+    public Task<DistrictDto> Get(Guid id, CancellationToken ct) => districts.GetAsync(id, ct);
+
+    [HttpPost, Authorize(Roles = Roles.CentralStaff)]
+    public async Task<ActionResult<DistrictDto>> Create(SaveDistrictRequest request, CancellationToken ct)
+    {
+        var district = await districts.CreateAsync(request, ct);
+        return CreatedAtAction(nameof(Get), new { id = district.Id }, district);
+    }
+
+    [HttpPut("{id:guid}"), Authorize(Roles = Roles.CentralStaff)]
+    public Task<DistrictDto> Update(Guid id, SaveDistrictRequest request, CancellationToken ct) => districts.UpdateAsync(id, request, ct);
+
+    [HttpDelete("{id:guid}"), Authorize(Roles = Roles.CentralStaff)]
+    public async Task<IActionResult> Deactivate(Guid id, CancellationToken ct)
+    {
+        await districts.DeactivateAsync(id, ct);
         return NoContent();
     }
 }

@@ -22,10 +22,9 @@ public sealed class DashboardService(
     public async Task<DashboardDto> GetAsync(AnalyticsFilter filter, CancellationToken ct)
     {
         var period = data.ResolvePeriod(filter);
-        var regions = await data.RegionsAsync(ct);
-        var sales = await data.SalesAsync(filter, new Period(period.Previous.From, period.To), regions, ct);
-        var stock = await data.StockAsync(filter, regions, ct);
-        var transit = await data.TransitAsync(filter, regions, ct);
+        var sales = await data.SalesAsync(filter, new Period(period.Previous.From, period.To), ct);
+        var stock = await data.StockAsync(filter, ct);
+        var transit = await data.TransitAsync(filter, ct);
         var today = clock.Today();
 
         var dealers = await reports.DealerRowsAsync(filter, period, sales, stock, ct);
@@ -38,7 +37,8 @@ public sealed class DashboardService(
             granularity,
             await KpisAsync(filter, period, sales, stock, transit, dealers, today, ct),
             AnalyticsCalc.Trend(sales, period, granularity),
-            await RegionRowsAsync(filter, period, sales, stock, regions, ct),
+            await RegionRowsAsync(filter, period, sales, stock, ct),
+            filter.RegionId is { } regionId ? await DistrictRowsAsync(regionId, period, sales, stock, ct) : [],
             products.Take(TopProductCount).ToList(),
             dealers,
             Distribution(stock, transit),
@@ -51,10 +51,9 @@ public sealed class DashboardService(
     public async Task<DashboardKpis> KpisOnlyAsync(AnalyticsFilter filter, CancellationToken ct)
     {
         var period = data.ResolvePeriod(filter);
-        var regions = await data.RegionsAsync(ct);
-        var sales = await data.SalesAsync(filter, new Period(period.Previous.From, period.To), regions, ct);
-        var stock = await data.StockAsync(filter, regions, ct);
-        var transit = await data.TransitAsync(filter, regions, ct);
+        var sales = await data.SalesAsync(filter, new Period(period.Previous.From, period.To), ct);
+        var stock = await data.StockAsync(filter, ct);
+        var transit = await data.TransitAsync(filter, ct);
         var dealers = await reports.DealerRowsAsync(filter, period, sales, stock, ct);
         return await KpisAsync(filter, period, sales, stock, transit, dealers, clock.Today(), ct);
     }
@@ -96,44 +95,78 @@ public sealed class DashboardService(
     }
 
     private async Task<IReadOnlyList<RegionRow>> RegionRowsAsync(
-        AnalyticsFilter filter, Period period, List<SalesFact> sales, List<StockFact> stock,
-        IReadOnlyDictionary<Guid, RegionInfo> regions, CancellationToken ct)
+        AnalyticsFilter filter, Period period, List<SalesFact> sales, List<StockFact> stock, CancellationToken ct)
     {
-        var dealers = await db.Dealers.AsNoTracking().Where(d => d.IsActive).Select(d => new { d.Id, d.RegionId }).ToListAsync(ct);
-        var pharmacyRegions = await db.Pharmacies.AsNoTracking()
-            .Where(p => p.IsActive && p.Status == PharmacyStatus.Active)
-            .Select(p => p.RegionId)
+        var regions = await db.Regions.AsNoTracking()
+            .Where(r => filter.RegionId == null || r.Id == filter.RegionId)
+            .Select(r => new { r.Id, r.NameUz, r.NameRu })
             .ToListAsync(ct);
+        var dealers = await db.Dealers.AsNoTracking().Where(d => d.IsActive).ToDictionaryAsync(d => d.Id, d => d.RegionId, ct);
+        var pharmacies = await ActivePharmacyRegionsAsync(ct);
 
-        var dealerProvince = dealers.ToDictionary(d => d.Id, d => regions[d.RegionId].ProvinceId);
         var current = sales.Where(s => period.Contains(s.Date)).ToList();
         var previous = sales.Where(s => period.Previous.Contains(s.Date)).ToList();
         var totalAmount = current.Sum(s => s.Amount);
 
-        var rows = regions.Values.Where(r => r.ParentId is null).Select(province =>
+        return regions.Select(region =>
         {
-            var regionSales = current.Where(s => regions[s.RegionId].ProvinceId == province.Id).ToList();
-            var regionStock = stock.Where(s => s.DealerId is { } id && dealerProvince.GetValueOrDefault(id) == province.Id).ToList();
+            var regionSales = current.Where(s => s.RegionId == region.Id).ToList();
+            var regionStock = stock.Where(s => s.DealerId is { } id && dealers.GetValueOrDefault(id) == region.Id).ToList();
             var amount = regionSales.Sum(s => s.Amount);
             var units = regionSales.Sum(s => s.Units);
-            var previousAmount = previous.Where(s => regions[s.RegionId].ProvinceId == province.Id).Sum(s => s.Amount);
             var stockUnits = regionStock.Sum(s => s.Units);
 
             return new RegionRow(
-                province.Id, province.NameUz, province.NameRu, amount, units,
+                region.Id, region.NameUz, region.NameRu, amount, units,
                 AnalyticsCalc.SharePercent(amount, totalAmount),
-                AnalyticsCalc.ChangePercent(amount, previousAmount),
+                AnalyticsCalc.ChangePercent(amount, previous.Where(s => s.RegionId == region.Id).Sum(s => s.Amount)),
                 stockUnits, regionStock.Sum(s => s.Value),
                 AnalyticsCalc.DaysOfStock(stockUnits, units, period.Days),
-                dealerProvince.Values.Count(p => p == province.Id),
-                pharmacyRegions.Count(r => regions[r].ProvinceId == province.Id));
-        });
-
-        return rows
-            .Where(r => filter.RegionId is null || AnalyticsDataService.InRegion(r.RegionId, filter.RegionId, regions) || regions[filter.RegionId.Value].ProvinceId == r.RegionId)
-            .OrderByDescending(r => r.SalesAmount)
-            .ToList();
+                dealers.Values.Count(id => id == region.Id),
+                pharmacies.Count(p => p.RegionId == region.Id));
+        }).OrderByDescending(r => r.SalesAmount).ToList();
     }
+
+    /// <summary>The next level down, shown once a region is selected.</summary>
+    private async Task<IReadOnlyList<DistrictRow>> DistrictRowsAsync(
+        Guid regionId, Period period, List<SalesFact> sales, List<StockFact> stock, CancellationToken ct)
+    {
+        var districts = await db.Districts.AsNoTracking()
+            .Where(d => d.RegionId == regionId)
+            .Select(d => new { d.Id, d.NameUz, d.NameRu, d.Type })
+            .ToListAsync(ct);
+        var dealers = await db.Dealers.AsNoTracking().Where(d => d.IsActive).ToDictionaryAsync(d => d.Id, d => d.DistrictId, ct);
+        var pharmacies = await ActivePharmacyRegionsAsync(ct);
+
+        var current = sales.Where(s => period.Contains(s.Date)).ToList();
+        var previous = sales.Where(s => period.Previous.Contains(s.Date)).ToList();
+        var totalAmount = current.Sum(s => s.Amount);
+
+        return districts.Select(district =>
+        {
+            var districtSales = current.Where(s => s.DistrictId == district.Id).ToList();
+            var amount = districtSales.Sum(s => s.Amount);
+            var units = districtSales.Sum(s => s.Units);
+            var stockUnits = stock.Where(s => s.DealerId is { } id && dealers.GetValueOrDefault(id) == district.Id).Sum(s => s.Units);
+
+            return new DistrictRow(
+                district.Id, district.NameUz, district.NameRu, district.Type, amount, units,
+                AnalyticsCalc.SharePercent(amount, totalAmount),
+                AnalyticsCalc.ChangePercent(amount, previous.Where(s => s.DistrictId == district.Id).Sum(s => s.Amount)),
+                stockUnits,
+                AnalyticsCalc.DaysOfStock(stockUnits, units, period.Days),
+                dealers.Values.Count(id => id == district.Id),
+                pharmacies.Count(p => p.DistrictId == district.Id));
+        }).OrderByDescending(d => d.SalesAmount).ThenBy(d => d.Name).ToList();
+    }
+
+    private async Task<List<PharmacyAddress>> ActivePharmacyRegionsAsync(CancellationToken ct) =>
+        await db.Pharmacies.AsNoTracking()
+            .Where(p => p.IsActive && p.Status == PharmacyStatus.Active)
+            .Select(p => new PharmacyAddress(p.RegionId, p.DistrictId))
+            .ToListAsync(ct);
+
+    private sealed record PharmacyAddress(Guid RegionId, Guid? DistrictId);
 
     private async Task<List<ProductRow>> ProductRowsAsync(
         AnalyticsFilter filter, Period period, List<SalesFact> sales, List<StockFact> stock, CancellationToken ct)

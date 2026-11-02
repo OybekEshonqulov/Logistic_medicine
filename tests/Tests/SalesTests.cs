@@ -184,7 +184,7 @@ public sealed class SalesTests(ApiFactory factory)
         var dealer = await _api.CreateDealerAsync();
         var other = await _api.CreateDealerAsync();
         var regionId = (await _api.ProvincesAsync())[0].Id;
-        var pending = await TestApi.PostAsync<PharmacyDto>(dealer.Client, "/api/v1/pharmacies", new SavePharmacyRequest("Yangi dorixona", regionId, "Manzil", null));
+        var pending = await TestApi.PostAsync<PharmacyDto>(dealer.Client, "/api/v1/pharmacies", new SavePharmacyRequest("Yangi dorixona", regionId, null, "Manzil"));
         Assert.Equal(PharmacyStatus.Pending, pending.Status);
 
         var (product, _) = await _api.StockDealerAsync(dealer, 5);

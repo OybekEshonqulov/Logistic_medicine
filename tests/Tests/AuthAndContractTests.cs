@@ -2,7 +2,10 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 using PharmaTrack.Application.Common;
+using PharmaTrack.Application.Features.References;
+using PharmaTrack.Infrastructure.Persistence;
 using PharmaTrack.Application.Features.Auth;
 using PharmaTrack.Application.Features.Users;
 using PharmaTrack.Domain.Common;
@@ -136,9 +139,54 @@ public sealed class AuthAndContractTests(ApiFactory factory)
     }
 
     [Fact]
-    public async Task Provinces_are_seeded()
+    public async Task Regions_and_districts_are_seeded_in_their_own_tables()
     {
-        var page = await TestApi.GetAsync<PagedResult<PharmaTrack.Application.Features.References.RegionDto>>(await _api.AdminAsync(), "/api/v1/regions?type=Province&pageSize=50");
-        Assert.Equal(14, page.TotalCount);
+        var admin = await _api.AdminAsync();
+        var regions = await TestApi.GetAsync<PagedResult<RegionDto>>(admin, "/api/v1/regions?pageSize=50");
+        Assert.Equal(14, regions.TotalCount);
+
+        var districts = await TestApi.GetAsync<PagedResult<DistrictDto>>(admin, "/api/v1/districts?pageSize=200");
+        Assert.Equal(200, districts.Items.Count);
+        Assert.True(districts.TotalCount >= 209);
+
+        var samarkand = regions.Items.Single(r => r.NameUz.StartsWith("Samarqand"));
+        var samarkandDistricts = await TestApi.GetAsync<PagedResult<DistrictDto>>(admin, $"/api/v1/districts?regionId={samarkand.Id}&pageSize=50");
+        Assert.Contains(samarkandDistricts.Items, d => d.NameUz == "Samarqand shahri" && d.Type == DistrictType.City);
+        Assert.Contains(samarkandDistricts.Items, d => d.NameUz == "Urgut tumani" && d.Type == DistrictType.District);
+    }
+
+    [Fact]
+    public async Task Seeding_twice_adds_nothing_and_keeps_edited_names()
+    {
+        var admin = await _api.AdminAsync();
+        var regions = await TestApi.GetAsync<PagedResult<RegionDto>>(admin, "/api/v1/regions?pageSize=50");
+        var region = regions.Items.Single(r => r.NameUz.StartsWith("Sirdaryo"));
+        var page = await TestApi.GetAsync<PagedResult<DistrictDto>>(admin, $"/api/v1/districts?regionId={region.Id}&pageSize=50");
+        var district = page.Items.Single(d => d.NameUz == "Sardoba tumani");
+        var update = await admin.PutAsJsonAsync($"/api/v1/districts/{district.Id}",
+            new SaveDistrictRequest(region.Id, district.Code, district.Type, district.NameUz, "Изменённое имя"), TestApi.Json);
+        update.EnsureSuccessStatusCode();
+        var before = await TestApi.GetAsync<PagedResult<DistrictDto>>(admin, "/api/v1/districts?pageSize=1");
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+            await scope.ServiceProvider.GetRequiredService<DbSeeder>().SeedAsync();
+
+        var after = await TestApi.GetAsync<PagedResult<DistrictDto>>(admin, "/api/v1/districts?pageSize=1");
+        Assert.Equal(before.TotalCount, after.TotalCount);
+        var reloaded = await TestApi.GetAsync<DistrictDto>(admin, $"/api/v1/districts/{district.Id}");
+        Assert.Equal("Изменённое имя", reloaded.NameRu);
+    }
+
+    [Fact]
+    public async Task District_must_belong_to_the_chosen_region()
+    {
+        var admin = await _api.AdminAsync();
+        var regions = await _api.ProvincesAsync();
+        var other = await TestApi.GetAsync<PagedResult<DistrictDto>>(admin, $"/api/v1/districts?regionId={regions[1].Id}&pageSize=1");
+
+        var response = await admin.PostAsJsonAsync("/api/v1/pharmacies",
+            new SavePharmacyRequest("Dorixona", regions[0].Id, other.Items[0].Id, "Manzil"), TestApi.Json);
+
+        await TestApi.AssertErrorAsync(response, HttpStatusCode.BadRequest, ErrorCodes.DistrictNotInRegion);
     }
 }

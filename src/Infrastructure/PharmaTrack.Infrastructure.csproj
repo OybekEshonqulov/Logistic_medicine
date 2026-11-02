@@ -23,4 +23,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Persistence/Seed/regions.json" LogicalName="PharmaTrack.Infrastructure.Persistence.Seed.regions.json" />
+  </ItemGroup>
+
 </Project>

@@ -9,6 +9,7 @@ public interface IAppDbContext
     DbSet<User> Users { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
     DbSet<Region> Regions { get; }
+    DbSet<District> Districts { get; }
     DbSet<Dealer> Dealers { get; }
     DbSet<Pharmacy> Pharmacies { get; }
     DbSet<Supplier> Suppliers { get; }

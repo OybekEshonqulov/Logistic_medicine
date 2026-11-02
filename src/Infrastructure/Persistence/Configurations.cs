@@ -28,9 +28,24 @@ internal sealed class RegionConfiguration : IEntityTypeConfiguration<Region>
 {
     public void Configure(EntityTypeBuilder<Region> b)
     {
+        b.Property(x => x.Code).HasMaxLength(20);
         b.Property(x => x.NameUz).HasMaxLength(150);
         b.Property(x => x.NameRu).HasMaxLength(150);
-        b.HasOne(x => x.Parent).WithMany().HasForeignKey(x => x.ParentId).OnDelete(DeleteBehavior.Restrict);
+        b.HasIndex(x => x.NameUz).IsUnique();
+        b.HasIndex(x => x.Code).IsUnique();
+    }
+}
+
+internal sealed class DistrictConfiguration : IEntityTypeConfiguration<District>
+{
+    public void Configure(EntityTypeBuilder<District> b)
+    {
+        b.Property(x => x.Code).HasMaxLength(20);
+        b.Property(x => x.NameUz).HasMaxLength(150);
+        b.Property(x => x.NameRu).HasMaxLength(150);
+        b.HasIndex(x => new { x.RegionId, x.NameUz }).IsUnique();
+        b.HasIndex(x => x.Code).IsUnique();
+        b.HasOne(x => x.Region).WithMany().HasForeignKey(x => x.RegionId).OnDelete(DeleteBehavior.Restrict);
     }
 }
 
@@ -42,6 +57,17 @@ internal sealed class DealerConfiguration : IEntityTypeConfiguration<Dealer>
         b.Property(x => x.Phone).HasMaxLength(20);
         b.Property(x => x.Address).HasMaxLength(500);
         b.HasOne(x => x.Region).WithMany().HasForeignKey(x => x.RegionId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne(x => x.District).WithMany().HasForeignKey(x => x.DistrictId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class DealerDistrictConfiguration : IEntityTypeConfiguration<DealerDistrict>
+{
+    public void Configure(EntityTypeBuilder<DealerDistrict> b)
+    {
+        b.HasKey(x => new { x.DealerId, x.DistrictId });
+        b.HasOne(x => x.District).WithMany().HasForeignKey(x => x.DistrictId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<Dealer>().WithMany(x => x.ServiceDistricts).HasForeignKey(x => x.DealerId);
     }
 }
 
@@ -63,6 +89,7 @@ internal sealed class PharmacyConfiguration : IEntityTypeConfiguration<Pharmacy>
         b.Property(x => x.Address).HasMaxLength(500);
         b.Property(x => x.Phone).HasMaxLength(20);
         b.HasOne(x => x.Region).WithMany().HasForeignKey(x => x.RegionId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne(x => x.District).WithMany().HasForeignKey(x => x.DistrictId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<Dealer>().WithMany().HasForeignKey(x => x.RequestedByDealerId).OnDelete(DeleteBehavior.Restrict);
     }
 }

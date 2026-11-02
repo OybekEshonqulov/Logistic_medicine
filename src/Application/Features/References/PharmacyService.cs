@@ -7,11 +7,12 @@ using PharmaTrack.Domain.Enums;
 
 namespace PharmaTrack.Application.Features.References;
 
-public sealed record PharmacyDto(Guid Id, string Name, Guid RegionId, string RegionName, string Address, string? Phone, PharmacyStatus Status, bool IsActive);
-public sealed record SavePharmacyRequest(string Name, Guid RegionId, string Address, string? Phone, bool IsActive = true);
+public sealed record PharmacyDto(Guid Id, string Name, Guid RegionId, string RegionName, Guid? DistrictId, string? DistrictName, string Address, string? Phone, PharmacyStatus Status, bool IsActive);
+public sealed record SavePharmacyRequest(string Name, Guid RegionId, Guid? DistrictId, string Address, string? Phone = null, bool IsActive = true);
 public sealed record PharmacyQuery : PageQuery
 {
     public Guid? RegionId { get; init; }
+    public Guid? DistrictId { get; init; }
     public PharmacyStatus? Status { get; init; }
 }
 
@@ -25,13 +26,13 @@ public sealed class SavePharmacyRequestValidator : AbstractValidator<SavePharmac
     }
 }
 
-public sealed class PharmacyService(IAppDbContext db, ICurrentUser currentUser)
+public sealed class PharmacyService(IAppDbContext db, ICurrentUser currentUser, RegionService regions)
 {
     public Task<PagedResult<PharmacyDto>> ListAsync(PharmacyQuery query, CancellationToken ct)
     {
         var pharmacies = Scoped();
-        if (query.RegionId is { } regionId)
-            pharmacies = pharmacies.Where(p => p.RegionId == regionId || p.Region.ParentId == regionId);
+        if (query.RegionId is { } regionId) pharmacies = pharmacies.Where(p => p.RegionId == regionId);
+        if (query.DistrictId is { } districtId) pharmacies = pharmacies.Where(p => p.DistrictId == districtId);
         if (query.Status is { } status) pharmacies = pharmacies.Where(p => p.Status == status);
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
@@ -48,12 +49,13 @@ public sealed class PharmacyService(IAppDbContext db, ICurrentUser currentUser)
     /// <summary>Central staff add a ready-to-use pharmacy; a dealer's addition waits for approval.</summary>
     public async Task<PharmacyDto> CreateAsync(SavePharmacyRequest request, CancellationToken ct)
     {
-        await db.Regions.Where(r => r.Id == request.RegionId).FirstOrNotFoundAsync(ct);
+        await regions.EnsureValidAddressAsync(request.RegionId, request.DistrictId, ct);
 
         var pharmacy = new Pharmacy
         {
             Name = request.Name,
             RegionId = request.RegionId,
+            DistrictId = request.DistrictId,
             Address = request.Address,
             Phone = request.Phone,
             IsActive = request.IsActive,
@@ -68,10 +70,11 @@ public sealed class PharmacyService(IAppDbContext db, ICurrentUser currentUser)
     public async Task<PharmacyDto> UpdateAsync(Guid id, SavePharmacyRequest request, CancellationToken ct)
     {
         var pharmacy = await db.Pharmacies.Where(p => p.Id == id).FirstOrNotFoundAsync(ct);
-        await db.Regions.Where(r => r.Id == request.RegionId).FirstOrNotFoundAsync(ct);
+        await regions.EnsureValidAddressAsync(request.RegionId, request.DistrictId, ct);
 
         pharmacy.Name = request.Name;
         pharmacy.RegionId = request.RegionId;
+        pharmacy.DistrictId = request.DistrictId;
         pharmacy.Address = request.Address;
         pharmacy.Phone = request.Phone;
         pharmacy.IsActive = request.IsActive;
@@ -110,5 +113,5 @@ public sealed class PharmacyService(IAppDbContext db, ICurrentUser currentUser)
     }
 
     private static IQueryable<PharmacyDto> Project(IQueryable<Pharmacy> pharmacies) => pharmacies.Select(p => new PharmacyDto(
-        p.Id, p.Name, p.RegionId, p.Region.NameUz, p.Address, p.Phone, p.Status, p.IsActive));
+        p.Id, p.Name, p.RegionId, p.Region.NameUz, p.DistrictId, p.District != null ? p.District.NameUz : null, p.Address, p.Phone, p.Status, p.IsActive));
 }

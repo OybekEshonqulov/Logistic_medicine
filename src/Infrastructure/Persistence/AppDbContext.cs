@@ -10,6 +10,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<User> Users => Set<User>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Region> Regions => Set<Region>();
+    public DbSet<District> Districts => Set<District>();
     public DbSet<Dealer> Dealers => Set<Dealer>();
     public DbSet<Pharmacy> Pharmacies => Set<Pharmacy>();
     public DbSet<Supplier> Suppliers => Set<Supplier>();
