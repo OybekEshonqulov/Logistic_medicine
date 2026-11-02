@@ -2,7 +2,7 @@
 
 Domain: https://pharm-api.agorarestobar.uz (Swagger: `/swagger`, database health: `/health`).
 
-2026-11-02: backend deployed, HTTPS and admin authentication verified, 73 tests passed. Automatic CD remains disabled at the owner's request; no deployment SSH key has been installed. Initial image: `pharmatrack-api:initial`. Daily backup cron runs at 03:15 Asia/Tashkent and keeps 14 days of dumps on this VPS.
+2026-11-02: backend deployed, HTTPS and admin authentication verified, 73 tests passed. Automatic CD is enabled for pushes to `main`, using a dedicated SSH key restricted to this project's deployment receiver. Daily backup cron runs at 03:15 Asia/Tashkent and keeps 14 days of dumps on this VPS.
 
 Server directory: `/opt/pharmatrack`. Compose project: `pharmatrack`. Only API loopback port `127.0.0.1:3300` is published. PostgreSQL has a separate volume and no published port. Network `172.30.89.0/24` must remain exclusive to this project. Host Caddy terminates HTTPS; append `PharmaTrack.caddy` to the existing configuration after taking a backup, validate, then reload.
 
