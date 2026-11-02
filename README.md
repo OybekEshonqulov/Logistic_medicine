@@ -73,6 +73,7 @@ dotnet ef migrations add NomiBilan -p src/Infrastructure -s src/Api -o Persisten
 
 ## Hujjatlar
 
+- [Production deploy va CI/CD](deploy/README.md)
 - [Frontend va mobil uchun API qo'llanmasi](docs/API_GUIDE.md)
 - [Rahbar dashboardi](docs/DASHBOARD.md)
 - [Viloyat va tumanlar](docs/REGIONS.md)
