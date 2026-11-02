@@ -138,7 +138,9 @@ app.UseSerilogRequestLogging();
 
 if (app.Configuration.GetValue("Swagger:Enabled", app.Environment.IsDevelopment()))
 {
-    app.UseSwagger();
+    // A relative server URL keeps "Try it out" working behind an HTTPS reverse proxy.
+    app.UseSwagger(options => options.PreSerializeFilters.Add((document, request) =>
+        document.Servers = [new OpenApiServer { Url = request.PathBase.HasValue ? request.PathBase.Value : "/" }]));
     app.UseSwaggerUI();
 }
 

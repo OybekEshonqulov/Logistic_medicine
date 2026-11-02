@@ -129,6 +129,9 @@ public sealed class AuthAndContractTests(ApiFactory factory)
         Assert.True(response.IsSuccessStatusCode, text);
         Assert.Contains("/api/v1/analytics/dashboard", text);
         Assert.Contains("/api/v1/sales", text);
+
+        using var json = JsonDocument.Parse(text);
+        Assert.Equal("/", json.RootElement.GetProperty("servers")[0].GetProperty("url").GetString());
     }
 
     [Fact]
