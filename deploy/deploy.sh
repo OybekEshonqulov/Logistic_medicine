@@ -28,6 +28,7 @@ if docker compose --env-file release.env -f deploy/compose.yaml up -d --no-deps 
     if curl --fail --silent --max-time 3 http://127.0.0.1:3300/health >/dev/null; then
       printf '%s\n' "$sha" > current-sha
       echo "Deployment healthy: $sha"
+      python3 deploy/cleanup.py --locked || echo 'Image cleanup deferred; deployment remains healthy.' >&2
       exit 0
     fi
     sleep 2

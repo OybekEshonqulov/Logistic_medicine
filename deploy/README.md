@@ -41,6 +41,8 @@ Never use an unrestricted administrative SSH key for Actions. Test that `ssh ...
 
 Health failure restores the previous API image. EF migrations run on startup, so database schema is **not** rolled back automatically. Use backwards-compatible migrations; destructive migrations need a separate recovery plan. Restore a backup only after stopping this project's API and explicitly choosing the target dump.
 
+Automatic image retention runs after successful deploys and daily at 03:45 server time. It keeps the 5 latest release tags, the configured current image, and all images referenced by any existing container. Only `pharmatrack-api:release-<40-character SHA>` tags are eligible; no global prune, volumes, or other projects are touched. Backup and maintenance logs rotate at 1 MiB. Preview with `python3 /opt/pharmatrack/deploy/cleanup.py --dry-run`.
+
 ```sh
 cd /opt/pharmatrack
 docker compose --env-file release.env -f deploy/compose.yaml ps

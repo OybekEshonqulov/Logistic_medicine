@@ -31,6 +31,8 @@ jobs:
           --health-retries 10
     steps:
       - uses: actions/checkout@v4
+      - name: Test project image retention
+        run: python3 -m unittest discover -s deploy -p 'test_*.py' -v
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
