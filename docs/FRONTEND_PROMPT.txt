@@ -1,0 +1,870 @@
+PHARMATRACK WEB FRONTEND: TO'LIQ TOPSHIRIQ
+
+Sen tajribali senior frontend dasturchisan. Quyidagi hujjat asosida PharmaTrack tizimining
+to'liq web frontendini noldan yoz. Backend tayyor va ishlaydi, uni o'zgartirma.
+Bu hujjat yagona manba: unda yozilmagan endpoint, maydon yoki qoidani o'ylab topma.
+Backendda yetishmagan narsani soxta (mock) ma'lumot bilan to'ldirma, BACKEND_GAPS.md fayliga yoz.
+
+API manzili:
+  https://pharm-api.agorarestobar.uz
+
+Tekshirish uchun jonli hujjat:
+  https://pharm-api.agorarestobar.uz/swagger
+  https://pharm-api.agorarestobar.uz/swagger/v1/swagger.json
+Backend kodi: https://github.com/OybekEshonqulov/Logistic_medicine
+
+
+==================================================================
+1. TIZIM NIMA QILADI
+==================================================================
+
+Xususiy kompaniya dorilarni yuk ko'rinishida oladi, markaziy omborga kirim qiladi, hududlardagi
+dilerlarga jo'natadi, dilerlar esa dorixonalarga sotadi. Sotuvni DILER kiritadi, dorixona tizimga
+kirmaydi. Maqsad: qaysi hududda qancha dori qolgani va qancha sotilganini ko'rish, rahbarga
+tahlil berish.
+
+  Yetkazib beruvchi -> Markaz (kirim) -> Diler (qabul, qoldiq) -> Dorixona (diler kiritgan sotuv)
+
+Atamalar (interfeysda aynan shular ishlatiladi):
+  Markaz        Markaziy ombor. Yagona, hududga tegishli emas.
+  Diler         Hududdagi vakil. Viloyat (region) va ixtiyoriy tuman (district) manzili bor.
+  Dorixona      Dilerdan oladigan mijoz. Tizim foydalanuvchisi emas.
+  Hudud         Viloyat (14 ta, tayyor yuklangan).
+  Tuman         Tuman yoki shahar (209 ta, tayyor yuklangan).
+  Partiya       Bir dorining bir xil raqam va yaroqlilik muddatiga ega to'plami (batch).
+  Jo'natma      Markaz va diler orasidagi tovar harakati (shipment).
+  Inventarizatsiya  Qoldiqni qo'lda sanash (stock count).
+
+Asosiy qoidalar:
+  - Qoldiq faqat amallar orqali o'zgaradi va har biri jurnalga yoziladi. Qo'lda tahrir yo'q.
+  - Qoldiq partiya darajasida yuritiladi va manfiy bo'lmaydi.
+  - Sotuv tahrirlanmaydi va o'chirilmaydi: xato sotuv bekor qilinadi (reverse) va qayta kiritiladi.
+  - FEFO: sotuvda partiya tanlanmasa, muddati eng yaqin partiyadan avtomatik yechiladi.
+  - Kirim narxi kompaniya siri: Diler uni hech qachon ko'rmaydi (API null qaytaradi).
+  - Sotuv hududi dorixona manzili bo'yicha, qoldiq hududi diler manzili bo'yicha hisoblanadi.
+  - Sotuv SOF hisoblanadi: bekor qilinganlar kirmaydi, tasdiqlangan dorixona qaytarishlari ayriladi.
+  - Pul birligi: so'm (backendda valyuta maydoni yo'q, hamma summani so'mda ko'rsat).
+
+Mobil ilova alohida jamoa tomonidan yoziladi. Sen faqat web ilovani yozasan, lekin Diler ham
+webdan foydalanadi, shuning uchun Diler ekranlari telefonda to'liq ishlashi shart.
+
+
+==================================================================
+2. TEXNOLOGIYALAR (ALMASHTIRMA)
+==================================================================
+
+  - React 19, TypeScript (strict: true), Vite
+  - React Router: marshrutlash
+  - TanStack Query: barcha server ma'lumotlari va kesh
+  - React Hook Form + Zod: formalar va validatsiya
+  - Tailwind CSS + shadcn/ui: interfeys
+  - TanStack Table: jadvallar
+  - Recharts: grafiklar
+  - i18next: uz (lotin), uz-Cyrl (krill) va ru tillari
+  - Vitest + Testing Library: testlar
+  - Paket menejeri: npm
+
+Muhit o'zgaruvchisi: VITE_API_BASE_URL. .env.example faylini qo'sh, haqiqiy qiymat va parollarni
+repoga yozma. Ishlab chiqishda CORS muammosi bo'lmasligi uchun Vite proxy orqali /api ni API ga
+yo'naltir. Productionda frontend domeni backend sozlamasidagi Cors__Origins ro'yxatida bo'lishi kerak.
+
+Papka tuzilishi:
+  src/app         router, providerlar, layout
+  src/api         http client, tiplar, har bir modul uchun so'rovlar
+  src/features    modul bo'yicha ekranlar (auth, dashboard, reports, receipts, stock, shipments,
+                  sales, stock-counts, adjustments, references, users, notifications)
+  src/components  umumiy komponentlar (DataTable, ConfirmDialog, AsyncSelect, StatusBadge, ...)
+  src/lib         format, ruxsatlar, sana yordamchilari
+  src/i18n        uz.json, uz-Cyrl.json, ru.json
+
+Kod talablari: any ishlatma, har bir so'rov tiplangan bo'lsin, komponentlar kichik bo'lsin,
+takroriy kodni umumiy komponentga chiqar, ortiqcha izoh yozma.
+
+
+==================================================================
+3. API UMUMIY KELISHUVLARI
+==================================================================
+
+Asosiy yo'l:     https://pharm-api.agorarestobar.uz/api/v1
+Sarlavhalar:     Authorization: Bearer <accessToken>
+                 Accept-Language: uz, uz-Cyrl yoki ru (har bir so'rovda joriy tilni yubor, standart uz)
+JSON:            maydonlar camelCase
+Identifikator:   GUID satr
+Sana:            DateOnly, "2026-11-02"
+Vaqt:            ISO 8601, ekranda Toshkent vaqtida ko'rsat (UTC+5)
+Enum:            matn, masalan "InTransit"
+Bugungi sana:    backend Toshkent vaqti bilan hisoblaydi, frontend ham shunday hisoblasin
+Javob kodlari:   POST yaratish 201, amal va tahrir 200 (yangilangan obyekt bilan),
+                 logout, change-password, reset-password, DELETE, notification read: 204 (tanasiz)
+
+Sahifalash (hamma PagedResult ro'yxatlar):
+  ?page=1&pageSize=20&search=...
+  pageSize eng ko'pi 200, undan kattasi jimgina 200 ga tushiriladi.
+  Tartiblash serverda yo'q. Server tartibini saqla, ustun bo'yicha sort qo'shma
+  (faqat analitika jadvallari to'liq keladi, ularda sort va sahifalash client tomonda).
+
+O'chirish:
+  DELETE yozuvni o'chirmaydi, isActive=false qiladi. Tugma nomi "Faolsizlantirish" bo'lsin.
+  Qayta faollashtirish: PUT bilan isActive=true.
+  PUT to'liq obyekt kutadi: isActive yuborilmasa true bo'ladi, shuning uchun tahrir formasi
+  mavjud isActive qiymatini doim yuborsin. Dilerda serviceRegionIds va serviceDistrictIds ham
+  to'liq yuborilsin, yuborilmasa tozalanib ketadi.
+
+isActive bo'yicha filtr faqat dealers ro'yxatida bor. Boshqa ro'yxatlar faol va nofaolni birga
+qaytaradi. Tanlash maydonlarida (select) nofaol yozuvlarni client tomonda yashir, ma'lumotnoma
+jadvalida esa holat ustuni bilan ko'rsat.
+
+Tumanlar 209 ta, pageSize esa 200: tumanlarni doim regionId bilan so'ra.
+
+Fayl yuklab olish (Excel):
+  fetch + Authorization bilan blob ol, keyin brauzerda saqlat. Oddiy <a href> ishlamaydi.
+  Content-Disposition sarlavhasi CORS'da ochilmagan, shuning uchun fayl nomini frontendda ber:
+    exports/sales     -> sotuvlar.xlsx
+    exports/stock     -> qoldiq.xlsx
+    exports/expiring  -> muddati-yaqin.xlsx
+    exports/dealers   -> dilerlar.xlsx
+    receipts/import/template -> kirim-shablon.xlsx
+
+
+==================================================================
+4. KIRISH VA SESSIYA (ENG MUHIM QISM, ANIQ SHUNDAY QIL)
+==================================================================
+
+Ochiq ro'yxatdan o'tish va parolni tiklash yo'q. Birinchi Admin serverda yaratilgan, qolgan
+foydalanuvchilarni Admin qo'shadi. Parolni unutgan foydalanuvchiga: "Administratorga murojaat qiling".
+
+POST /auth/login    { phone, password } -> AuthResponse
+POST /auth/refresh  { refreshToken }    -> AuthResponse
+POST /auth/logout   { refreshToken }    -> 204 (access token ham kerak)
+GET  /auth/me                           -> MeDto
+POST /auth/change-password { currentPassword, newPassword } -> 204
+
+Telefon formati: +998XXXXXXXXX. Formada niqob ishlat va shu ko'rinishda yubor.
+Access token 30 daqiqa (expiresIn soniyada), refresh token 30 kun.
+
+Tokenlar: accessToken va refreshToken localStorage'da saqlanadi (barcha tablar bir xil ko'rishi uchun).
+Ilova ochilganda token bo'lsa GET /auth/me chaqir.
+
+Refresh token BIR MARTALIK. Eski token qayta yuborilsa, server bu foydalanuvchining BARCHA
+sessiyalarini tugatadi. Shuning uchun:
+  1. 401 kelsa va javobdagi code === "common.unauthorized" bo'lsa, refresh qil va so'rovni bir marta
+     takrorla. Boshqa 401 kodlarida refresh qilma (auth.invalid_credentials, auth.invalid_refresh_token).
+  2. /auth/* so'rovlarining o'zi refresh'ni ishga tushirmasin.
+  3. Bir vaqtda faqat bitta refresh ketsin: bir nechta so'rov 401 olsa, hammasi bitta natijani kutsin.
+  4. Bir nechta TAB uchun navigator.locks.request("pt-refresh", ...) ishlat. Qulf ichida tokenni
+     localStorage'dan qayta o'qi: agar u shu tab yuborgan eski tokendan farq qilsa, boshqa tab yangilab
+     bo'lgan, refresh qilma va yangi access token bilan davom et.
+     Web Locks mavjud bo'lmagan brauzer uchun localStorage asosidagi oddiy qulf yoz.
+  5. Yangi refreshToken ni darhol saqla.
+  6. auth.invalid_refresh_token (401) yoki auth.user_inactive (403) kelsa: tokenlarni o'chir va /login ga o't.
+  7. 429 (common.too_many_requests) kelsa sessiyani tugatma: login va refresh birgalikda bir IP uchun
+     daqiqasiga 10 ta so'rov bilan cheklangan. Foydalanuvchiga xabar ko'rsat va keyinroq qayta urin.
+
+Parol o'zgartirilgandan keyin barcha refresh tokenlar bekor bo'ladi: tokenlarni o'chir va /login ga yubor.
+Parol kamida 8 belgi.
+Logout: refreshToken bilan chaqir, tarmoq xatosi bo'lsa ham lokal tokenlarni o'chir va query keshini tozala.
+
+
+==================================================================
+5. ROLLAR VA RUXSATLAR
+==================================================================
+
+Rollar: Admin, Warehouse (omborchi), Executive (rahbar, faqat ko'radi), Dealer.
+
+Ekran va tugmalarni user.role bo'yicha ko'rsat. /auth/me dagi permissions ro'yxatiga TAYANMA,
+u APIdagi ruxsatlarga to'liq mos emas (masalan Warehouse'da references.manage bor, lekin diler
+yarata olmaydi; Dealer'da references.read bor, lekin yetkazib beruvchilarni ko'ra olmaydi).
+Yagona to'g'ri manba quyidagi jadval. Hammasini src/lib/permissions.ts da bir joyga yig'.
+
+A=Admin, W=Warehouse, E=Executive, D=Dealer
+
+Modul                                      | Ko'rish       | O'zgartirish
+-------------------------------------------+---------------+---------------------------------
+users, reset-password                      | A             | A
+regions, districts                         | A W E D       | A W
+dealers                                    | A W E D(o'zi) | A
+pharmacies                                 | A W E D*      | POST: A W D; PUT, approve, reject, DELETE: A W
+products, manufacturers                    | A W E D       | A W
+suppliers                                  | A W E         | A W
+receipts                                   | A W E         | A W (qo'lda, import, shablon)
+batches                                    | A W E D**     | yo'q (kirim orqali yaratiladi)
+stock/balances, stock/movements            | A W E D(o'zi) | yo'q
+shipments                                  | A W E D(o'zi) | POST, send, receive, cancel: A W D (6.3 qoida);
+                                           |               | approve: A W; resolve-discrepancy: A
+stock-counts                               | A W E D(o'zi) | A W D (6.5 qoida)
+adjustments                                | A W E D(o'zi) | POST: A W D; approve, reject: A
+sales                                      | A W E D(o'zi) | POST: faqat D; reverse: A, D(o'zi)
+analytics/dashboard, analytics/summary     | A E           | -
+analytics/sales, stock, expiring,          | A W E D***    | -
+  days-of-stock, dead-stock, dealers       |               |
+analytics/reconciliation                   | A W E         | -
+exports/*                                  | A W E         | -
+notifications                              | hamma         | o'ziniki
+auth/me, change-password, logout           | hamma         | o'ziniki
+
+  *   Diler Active dorixonalarni va o'zi so'ragan dorixonalarni ko'radi.
+  **  Dilerga purchasePrice null keladi.
+  *** Dilerga server filtrni o'ziga majburlaydi, qiymat (value, stockValue) maydonlari null keladi.
+      Null qiymatli ustunlarni Diler uchun umuman ko'rsatma.
+
+UI cheklovi qulaylik uchun, lekin API baribir tekshiradi: 403 (common.forbidden) kelsa toast chiqar.
+Marshrutga ruxsati yo'q foydalanuvchi kirsa "Ruxsat yo'q" sahifasini ko'rsat.
+
+
+==================================================================
+6. BIZNES JARAYONLARI
+==================================================================
+
+Markaziy ombor location ID si (backendda doimiy):
+  CENTRAL_LOCATION_ID = "00000000-0000-0000-0000-000000000001"
+Joylashuvlar ro'yxati uchun endpoint yo'q. Tanlash ro'yxatini shunday yig': Markaz + GET /dealers dagi
+har bir dilerning locationId si. Dilerning o'z locationId si: GET /dealers/{me.dealerId}.
+
+6.1 Tizimni boshlash tartibi (bo'sh tizimda maslahat sifatida ko'rsat)
+  Ishlab chiqaruvchi -> Dori -> Yetkazib beruvchi -> Diler -> Diler foydalanuvchisi -> Dorixona -> Kirim -> Jo'natma
+
+6.2 Kirim (faqat markazga)
+  Qo'lda: hujjat raqami, yetkazib beruvchi, sana, izoh va qatorlar (dori, partiya raqami, muddat, miqdor, narx).
+  Bir xil dori va partiya raqami boshqa muddat bilan kelsa 409 batch.expiry_mismatch (details[0] = partiya raqami).
+  Kirim tahrirlanmaydi va o'chirilmaydi. Saqlashdan oldin tasdiqlash oynasini ko'rsat.
+
+  Excel import (multipart/form-data): file, documentNumber, supplierId, receivedOn.
+  Ustunlar: "GTIN yoki dori nomi", "Partiya raqami", "Yaroqlilik muddati (YYYY-MM-DD)", "Miqdor", "Narx".
+  Hammasi yoki hech narsa: bitta xato qator butun faylni rad etadi.
+  400 import.failed kelsa details = [{ row, message }]: xatolarni jadval qilib ko'rsat.
+  Sahifada shablonni yuklab olish tugmasi bo'lsin.
+
+6.3 Jo'natma
+  Holatlar:  Draft -> Approved -> InTransit -> Received
+             Draft va Approved -> Cancelled
+  Yo'nalish: Markaz -> Diler (markaz xodimi toDealerId bilan yaratadi)
+             Diler -> Markaz (qaytarish: diler toDealerId SIZ yaratadi)
+  Dilerdan dilerga jo'natma yo'q.
+
+  Tugmalar (aynan shu shartlarda ko'rsat). "Markazdan" = fromLocationId === CENTRAL_LOCATION_ID:
+    Tasdiqlash:      status=Draft, rol A yoki W
+    Yuborish:        status=Approved; Markazdan bo'lsa rol A/W; aks holda rol D va fromLocationId o'ziniki
+    Qabul qilish:    status=InTransit; Markazga bo'lsa rol A/W; aks holda rol D va toLocationId o'ziniki
+    Bekor qilish:    status Draft/Approved; Markazdan bo'lsa rol A/W; aks holda rol D va fromLocationId o'ziniki
+    Farqni hal qilish: item.discrepancyStatus=Open, faqat A
+  E'tibor: Admin dilerning joyidan yubora yoki qabul qila olmaydi, API 403 qaytaradi.
+
+  Yaratish formasi: qatorlarni GET /stock/balances?locationId=<joylashuv>&pageSize=200 dan tanla.
+  Har qatorda dori, partiya, muddat va mavjud miqdorni ko'rsat. Bir partiya bir marta kiritiladi.
+  Muddati o'tgan partiya dilerga yuborilmaydi (400 batch.expired, details[0] = partiya raqami), ularni
+  tanlovdan chiqar. Dilerning markazga qaytarishida muddati o'tgani ham mumkin.
+  Qoldiq yaratishda emas, YUBORISHDA kamayadi va tekshiriladi: yuborishda 409 stock.insufficient bo'lishi mumkin.
+
+  Qabul qilish formasi: har qator uchun receivedQuantity, boshlang'ich qiymat sentQuantity.
+  Miqdor farq qilsa sabab maydonini ko'rsat. HAMMA qator yuboriladi, itemId = item.id
+  (aks holda 400 shipment.receive_items_mismatch). 0 yoki sentQuantity dan katta qiymat ruxsat etilgan
+  va bunday qator Open farq bo'ladi. Yuborishdan oldin farqlarni ko'rsatib tasdiqlat.
+
+  Farqni hal qilish (Admin):
+    CorrectSender: jo'natuvchi qoldig'i farq miqdoriga tuzatiladi.
+    AcceptAsIs:    farq yo'qotish yoki ortiqcha sifatida qabul qilinadi, qoldiq o'zgarmaydi.
+  Farq = sentQuantity - receivedQuantity. Musbat bo'lsa kam kelgan, manfiy bo'lsa ortiq kelgan.
+
+  Detal sahifasida holat vaqt chizig'ini ko'rsat: createdAt, approvedAt, sentAt, receivedAt.
+
+6.4 Sotuv (faqat Diler kiritadi)
+  POST /sales, sarlavha Idempotency-Key MAJBURIY (100 belgigacha).
+  Kalit qoidasi:
+    - Forma ochilganda crypto.randomUUID() bilan kalit yarat.
+    - Tarmoq xatosi yoki 5xx bo'lsa natija noma'lum: formani qulfla va faqat "Qayta yuborish" tugmasini ber,
+      AYNAN shu kalit va shu ma'lumot bilan yubor.
+    - 4xx bo'lsa sotuv yaratilmagan: tahrir qilishga ruxsat ber, kalit o'sha qolishi mumkin.
+    - Muvaffaqiyatdan keyin yangi sotuv uchun yangi kalit yarat.
+    - 201 ham, 200 ham muvaffaqiyat (200 = oldin qabul qilingan).
+
+  Forma: dorixona, sana, izoh, qatorlar (dori, miqdor, narx, ixtiyoriy partiya).
+    Dorixona: GET /pharmacies, isActive=true va status Active yoki Pending bo'lganlar. Pending belgisi bilan ko'rsat.
+    Sana: standart bugun, kelajak mumkin emas (400 sale.date_in_future), o'tgan sana mumkin.
+    Dori: GET /stock/balances (dilerga avtomatik o'z qoldig'i) ni productId bo'yicha yig'ib ko'rsat.
+    Bir dori bir sotuvda bir marta. Partiya maydoni standart "Avtomatik (FEFO)".
+    Pastda jami summa = sum(miqdor x narx).
+  Xatolar: 409 stock.insufficient, details[0] = productId yoki batchId, tegishli qatorni belgilab ko'rsat.
+           400 pharmacy.not_available, 400 batch.expired.
+
+  Bekor qilish: POST /sales/{id}/reverse { reason } sabab majburiy. Bekor qilingan sotuv qoldiqqa qaytadi.
+  Kerakli amalni taklif qil: bekor qilib, shu ma'lumot bilan yangi forma ochish.
+
+6.5 Inventarizatsiya
+  POST /stock-counts { locationId? }: Diler va Warehouse yubormaydi (Warehouse faqat markaz),
+  Admin istalgan joylashuvni tanlay oladi. Javobdagi items sanash ro'yxati (expectedQuantity).
+  Sanash formasi: har qatorga countedQuantity kiritiladi, farq darhol ko'rinadi. Qatorlarni lokal saqla,
+  sahifa yopilsa yo'qolmasin (sessionStorage).
+  POST /stock-counts/{id}/complete { items: [{ batchId, countedQuantity }] }:
+    Ro'yxatdagi HAMMA partiya yuboriladi (aks holda 400 stock_count.items_mismatch).
+    Ro'yxatda yo'q, javonda topilgan partiyani GET /batches dan qo'shish mumkin.
+    Yakunlangach qoldiq sanalgan miqdorga TENG bo'ladi, tasdiqsiz. Shuning uchun aniq ogohlantirish bilan tasdiqlat.
+  Yakunlanganini qayta yakunlab bo'lmaydi (409 stock_count.not_in_progress).
+
+6.6 Hisobdan chiqarish va dorixona qaytarishi
+  POST /adjustments so'rov yaratadi, qoldiq faqat Admin tasdiqlaganda o'zgaradi.
+  type: WriteOffExpired, WriteOffDamaged, WriteOffOther: qoldiq kamayadi.
+        PharmacyReturn: qoldiq oshadi va sof sotuv kamayadi, pharmacyId majburiy.
+          unitPrice'ni formada majburiy qil: API uni talab qilmaydi, lekin berilmasa dona ayriladi, summa ayrilmaydi.
+          Sof sotuvga faqat diler joylashuvidagi qaytarish ta'sir qiladi, shuning uchun Admin uni diler joylashuvida yaratsin.
+  locationId: Diler va Warehouse yubormaydi, Admin tanlashi mumkin.
+  Partiya: shu joylashuvning qoldig'idan (stock/balances).
+  Admin ro'yxatda Pending yozuvlarni tasdiqlaydi yoki rad etadi. Tasdiqda 409 stock.insufficient bo'lishi mumkin.
+
+6.7 Dorixona
+  Markaz xodimi qo'shsa darhol Active. Diler qo'shsa Pending va A/W tasdiqlaydi yoki rad etadi.
+  Diler Pending dorixonasiga darhol sotishi mumkin, Rejected dorixonaga sotib bo'lmaydi.
+  Diler dorixonani tahrirlay olmaydi.
+
+6.8 Manzil tanlash
+  Hudud majburiy, tuman ixtiyoriy. Tuman ro'yxati hududga bog'liq (GET /districts?regionId=&pageSize=100),
+  hudud o'zgarsa tuman tozalanadi. Mos kelmasa 400 district.not_in_region.
+  Dilerda qo'shimcha xizmat hududlari: serviceRegionIds, serviceDistrictIds (ko'p tanlov).
+
+6.9 Foydalanuvchi
+  Role=Dealer bo'lsa dealerId majburiy (400 user.dealer_required). Boshqa rollarda dealerId yuborilmaydi.
+  Telefon band bo'lsa 409 user.phone_taken, shu maydonga xatoni qo'y.
+  O'chirish yo'q: PUT bilan isActive=false. Parolni tiklash: POST /users/{id}/reset-password.
+
+6.10 Ogohlantirishlar
+  Server soatiga bir marta tekshiradi. Warehouse'ga ogohlantirish yuborilmaydi, unda ro'yxat bo'sh bo'lishi normal.
+  Sarlavhada qo'ng'iroq belgisi: GET /notifications/unread-count har 60 soniyada.
+  Bosilganda: read qil va o'tish:
+    ExpiringBatch       -> entityId = batchId     -> hisobot: muddati yaqin
+    LowStock            -> entityId = productId   -> qoldiq, shu dori filtri bilan
+    ShipmentNotReceived -> entityId = shipmentId  -> jo'natma detali
+    SalesNotReported    -> entityId = dealerId    -> A/E: dilerlar hisoboti; D: yangi sotuv
+
+
+==================================================================
+7. EKRANLAR VA MARSHRUTLAR
+==================================================================
+
+Kirgandan keyingi sahifa: Admin, Executive -> /dashboard; Warehouse -> /warehouse; Dealer -> /my.
+
+Menyu:
+  Admin:     Dashboard; Hisobotlar; Kirim; Qoldiq; Partiyalar; Jo'natmalar; Sotuvlar; Inventarizatsiya;
+             Hisobdan chiqarish; Ma'lumotnomalar; Foydalanuvchilar
+  Warehouse: Bosh sahifa; Kirim; Qoldiq; Partiyalar; Jo'natmalar; Sotuvlar; Inventarizatsiya;
+             Hisobdan chiqarish; Hisobotlar; Ma'lumotnomalar (dilerlar faqat ko'rish)
+  Executive: Dashboard; Hisobotlar; Kirim; Qoldiq; Jo'natmalar; Sotuvlar; Hisobdan chiqarish;
+             Ma'lumotnomalar (hammasi faqat ko'rish, yaratish va amal tugmalari YO'Q)
+  Dealer:    Bosh sahifa; Yangi sotuv; Sotuvlarim; Jo'natmalar; Qoldig'im; Inventarizatsiya;
+             Hisobdan chiqarish; Dorixonalar; Hisobotlar. Telefonda pastki navigatsiya.
+Menyu punktlari yonida kutayotgan ishlar soni (badge), har biri GET ...&pageSize=1 dagi totalCount:
+  Admin: adjustments?status=Pending, shipments?hasOpenDiscrepancy=true, pharmacies?status=Pending
+  Warehouse: pharmacies?status=Pending, shipments?status=Draft
+  Dealer: shipments?status=InTransit
+
+Marshrutlar:
+  /login, /profile (parolni o'zgartirish, til), /notifications, /403, /404
+  /dashboard                     Rahbar dashboardi (8-bo'lim)
+  /warehouse                     Ombor bosh sahifasi
+  /my                            Diler bosh sahifasi
+  /receipts, /receipts/new, /receipts/import, /receipts/:id
+  /stock/balances, /stock/movements, /batches
+  /shipments, /shipments/new, /shipments/:id
+  /sales, /sales/new, /sales/:id
+  /stock-counts, /stock-counts/:id
+  /adjustments
+  /reports/sales, /reports/stock, /reports/expiring, /reports/days-of-stock,
+  /reports/dead-stock, /reports/dealers, /reports/reconciliation
+  /references/products, manufacturers, suppliers, dealers, pharmacies, regions, districts
+  /users
+
+Filtr, sahifa va qidiruv holati URL query'da tursin (havola ulashilganda shu ko'rinish ochilsin).
+
+/warehouse bosh sahifa:
+  Kartalar: Draft, Approved, InTransit jo'natmalar soni; tasdiq kutayotgan dorixonalar;
+  analytics/expiring?withinDays=30 dagi partiyalar. Tez amallar: Yangi kirim, Yangi jo'natma, Excel import.
+
+/my diler bosh sahifa:
+  Katta "Yangi sotuv" tugmasi. Qabul kutayotgan jo'natmalar (shipments?status=InTransit).
+  Holat: analytics/dealers (o'z qatori: oxirgi sotuv, reporting, stockUnits, daysOfStock).
+  Tugayotgan dorilar: analytics/days-of-stock, health=Stockout/Critical.
+  Muddati yaqinlar: analytics/expiring?withinDays=90. Oxirgi 5 ta sotuv.
+
+Qidiruv maydonini faqat shu ro'yxatlarda ko'rsat (boshqalarda server search'ni e'tiborsiz qoldiradi):
+  users (ism, telefon); regions, districts (nom); dealers (nom, telefon); pharmacies (nom, manzil);
+  products (nom yoki aniq GTIN); suppliers, manufacturers (nom); receipts (hujjat raqami);
+  batches (partiya raqami); stock/balances (dori yoki partiya).
+
+Ro'yxat filtrlari (query parametrlari, hammasi ixtiyoriy):
+  users:         role, dealerId
+  districts:     regionId, type
+  dealers:       regionId, districtId, isActive
+  pharmacies:    regionId, districtId, status
+  products:      manufacturerId
+  receipts:      supplierId, from, to
+  batches:       productId, expiringBefore
+  stock/balances: locationId, dealerId, productId, expiringBefore, includeEmpty
+  stock/movements: locationId, productId, batchId, type, from, to (bu ikkisi ISO vaqt)
+  shipments:     status, dealerId, hasOpenDiscrepancy
+  sales:         dealerId, pharmacyId, productId, status, from, to
+  stock-counts:  locationId, status
+  adjustments:   locationId, status, type
+  notifications: unreadOnly
+
+Harakatlar jurnalida sourceId bo'yicha o'tish:
+  Receipt -> kirim; ShipmentOut, ShipmentIn, ShipmentCorrection -> jo'natma; Sale, SaleReversal -> sotuv;
+  CountAdjustment -> inventarizatsiya; WriteOff, PharmacyReturn -> hisobdan chiqarish.
+quantityDelta ni ishorasi bilan ko'rsat, kirim yashil, chiqim qizil.
+
+
+==================================================================
+8. RAHBAR DASHBOARDI (/dashboard, LOYIHANING ENG MUHIM EKRANI)
+==================================================================
+
+Rahbar bir qarashda 3 savolga javob olishi kerak: qancha sotildi, qancha qoldi, nimaga e'tibor berish kerak.
+
+Bitta so'rov butun ekranni to'ldiradi, qismlarga bo'lib yuklama:
+  GET /analytics/dashboard?from=&to=&regionId=&districtId=&dealerId=&productId=
+Filtrlar ixtiyoriy, standart oxirgi 30 kun. Filtrni URL'da saqla. Yangilash tugmasi va
+"Yangilangan vaqt: generatedAt" yozuvi bo'lsin. Har 5 daqiqada fonda yangilansin.
+
+Filtr paneli (tepada, yopishqoq):
+  Davr: Bugun, 7 kun, 30 kun (standart), Bu oy, O'tgan oy, Bu yil, Tanlangan oraliq
+  Hudud -> Tuman (hududga bog'liq) -> Diler (hududga bog'liq, GET /dealers?regionId=) -> Dori (qidiruvli)
+  Tozalash va Excel eksport menyusi (dilerlar, sotuv, qoldiq, muddati yaqin; joriy filtr bilan)
+
+Tartib:
+1-qator, asosiy kartalar (kpis):
+  Sotuv summasi: salesAmount.value, changePercent
+  Sotilgan dona: salesUnits.value, changePercent
+  Yalpi foyda:   grossMargin.value, changePercent, marginPercent foiz sifatida
+  Qoldiq qiymati: stockValue, stockUnits dona, daysOfStock "kunga yetadi"
+  O'sish yashil, pasayish qizil, changePercent null bo'lsa "Oldingi davrda yo'q". Yonida "oldingi davrga nisbatan".
+  Karta ichidagi kichik matnda previousValue ni ko'rsat.
+
+2-qator, xavf kartalari (past qiymatda neytral, xavfda qizil/sariq):
+  Yo'ldagi tovar: inTransitValue, inTransitUnits
+  Muddati yaqin: expiringValue. Muddati o'tgan: expiredValue. Hisobdan chiqarilgan: writeOffValue
+  Ochiq farqlar: openDiscrepancies. Dilerlar intizomi: reportingDealers / activeDealers
+
+3-qator:
+  Chapda (2/3 kenglik) sotuv grafigi salesTrend: amount yaxlit chiziq, previousAmount uzuq chiziq,
+    tooltip'da amount, units, previousAmount. date bo'lim boshlanishi, granularity bo'yicha formatla
+    (Day: 02.11, Week: "02.11 haftasi", Month: "Noyabr 2026").
+  O'ngda (1/3) "Bugun nimaga e'tibor berish kerak" attention[]: severity rangida, message matni,
+    bosilganda o'tish:
+      DealerNotReporting -> /reports/dealers?dealerId=entityId
+      ExpiredStock       -> /reports/expiring (entityId = locationId)
+      ProductStockout    -> /stock/balances?productId=entityId
+      ShipmentStuck, OpenDiscrepancy -> /shipments/entityId
+      PendingAdjustment  -> /adjustments?status=Pending (entityId null)
+      PendingPharmacy    -> /references/pharmacies?status=Pending (entityId null)
+    Bo'sh bo'lsa "Hammasi joyida" holatini ko'rsat.
+
+4-qator, hududlar kesimi regions[]:
+  Har bir hudud uchun gorizontal ustun va jadval: nom (til bo'yicha name, nameCyrl yoki nameRu), salesAmount,
+  sharePercent, changePercent, stockUnits, stockValue, daysOfStock, dealerCount, pharmacyCount.
+  Qatorga bosish regionId filtrini qo'yadi. Hudud tanlanganda regions faqat shu hududni qaytaradi va
+  districts[] to'ladi: tumanlar jadvali (type belgisi bilan), bosilganda districtId qo'yiladi.
+  Geografik xarita QILMA: backendda geo ma'lumot yo'q, reyting yetarli.
+  Hudud yoki tuman tanlanganda: "Markaziy ombor qoldig'i bu ko'rinishga kirmaydi" eslatmasini ko'rsat.
+
+5-qator:
+  Top dorilar topProducts[] (10 ta): name, salesAmount, salesUnits, sharePercent, changePercent,
+    stockUnits, daysOfStock, health nishoni. Bosilganda productId filtri.
+  Qoldiq taqsimoti distribution: Markaz, Dilerlar, Yo'lda (dona va qiymat, donut yoki stacked bar).
+
+6-qator:
+  Muddat diagrammasi expiryBuckets[]: kalitlar aynan "expired", "0-30", "31-60", "61-90", "90+"; dona va qiymat.
+    "expired" qizil, "0-30" to'q sariq, qolganlari neytral.
+  Zaxira salomatligi stockHealth[]: Stockout, Critical, Healthy, Overstock, NoSales; dori soni, dona, qiymat.
+
+7-qator, dilerlar jadvali dealers[]:
+  name, regionName, districtName, salesAmount, salesUnits, changePercent, stockUnits, stockValue,
+  daysOfStock, expiringUnits, lastSaleDate, daysSinceLastSale, reporting nishoni.
+  Client tomonda sort va sahifalash. Bosilganda dealerId filtri.
+
+Hisoblash ta'riflari (tooltip sifatida ko'rsat):
+  Sotuv: bekor qilinganlar kirmaydi, tasdiqlangan qaytarishlar ayriladi.
+  Foyda: sotuv summasi minus kirim narxi.
+  Zaxira kuni: qoldiq / (davrdagi sotuv / davr kunlari). Sotuv bo'lmasa null, "—" ko'rsat.
+  Qiymat: kirim narxida.
+  Qoldiq kartalari HOZIRGI holat, davrga bog'liq emas: "hozir" deb belgila.
+  Zaxira holati: qoldiq 0 Stockout; sotuv yo'q NoSales; 14 kundan kam Critical; 90 kundan ko'p Overstock; qolgani Healthy.
+  Oldingi davr: tanlangan davrdan oldingi teng uzunlikdagi davr.
+
+Bo'sh holat: sotuv yo'q bo'lsa grafik o'rniga tushuntirish. Yuklanishda skeleton, xatoda qayta urinish tugmasi.
+Dashboard'da yozish amali yo'q. 1280px va undan kengda to'liq, planshet va telefonda kartalar ustunga tushadi,
+jadvallar gorizontal aylanadi.
+
+Summalar: 1 234 567 so'm; kartalarda qisqa ko'rinish (1,23 mlrd, 45,6 mln) va tooltip'da to'liq raqam.
+
+
+==================================================================
+9. HISOBOTLAR (/reports/*)
+==================================================================
+
+Hammasi massiv qaytaradi (sahifalanmagan), client tomonda jadval. Filtrlar: from, to, regionId, districtId,
+dealerId, productId (AnalyticsFilter). Diler uchun dealerId filtrini yashir.
+Excel tugmasi faqat A W E ga, "Eksport" bo'lmagan hisobotda tugma yo'q.
+
+  /reports/sales    GET /analytics/sales?groupBy=Day|Week|Month|Region|District|Dealer|Pharmacy|Product
+                    Qator: key, label, units, amount. Vaqt guruhida grafik + jadval. Eksport: sales (dilerlar kesimida).
+  /reports/stock    GET /analytics/stock?groupBy=Location|Region|Product|Batch
+                    Qator: key, label, units, value. Eksport: stock.
+  /reports/expiring GET /analytics/expiring?withinDays=  (standart 90, tanlov 30/60/90/180)
+                    daysLeft manfiy bo'lsa "muddati o'tgan". Eksport: expiring.
+  /reports/days-of-stock GET /analytics/days-of-stock
+  /reports/dead-stock    GET /analytics/dead-stock?days=60
+  /reports/dealers       GET /analytics/dealers. Eksport: dealers.
+  /reports/reconciliation GET /analytics/reconciliation (A W E). isBalanced=true bo'lsa yashil tasdiq,
+                    aks holda mismatches jadvali; unitsByMovementType kesimi.
+
+
+==================================================================
+10. API TIPLARI (src/api/types.ts GA AYNAN SHUNDAY YOZ)
+==================================================================
+
+type Guid = string; type DateOnly = string; type DateTime = string;
+
+interface PagedResult<T> { items: T[]; page: number; pageSize: number; totalCount: number; totalPages: number; }
+interface ApiProblem { status: number; title: string; code: string; traceId: string; instance?: string;
+  errors?: Record<string, string[]>; details?: unknown[]; }
+
+type UserRole = 'Admin'|'Warehouse'|'Executive'|'Dealer';
+type DistrictType = 'District'|'City';
+type PharmacyStatus = 'Pending'|'Active'|'Rejected';
+type ShipmentStatus = 'Draft'|'Approved'|'InTransit'|'Received'|'Cancelled';
+type DiscrepancyStatus = 'None'|'Open'|'Resolved';
+type DiscrepancyResolution = 'CorrectSender'|'AcceptAsIs';
+type SaleStatus = 'Active'|'Reversed';
+type StockCountStatus = 'InProgress'|'Completed';
+type AdjustmentType = 'WriteOffExpired'|'WriteOffDamaged'|'WriteOffOther'|'PharmacyReturn';
+type AdjustmentStatus = 'Pending'|'Approved'|'Rejected';
+type MovementType = 'Receipt'|'ShipmentOut'|'ShipmentIn'|'ShipmentCorrection'|'Sale'|'SaleReversal'|'CountAdjustment'|'WriteOff'|'PharmacyReturn';
+type NotificationType = 'LowStock'|'ExpiringBatch'|'ShipmentNotReceived'|'SalesNotReported';
+type TrendGranularity = 'Day'|'Week'|'Month';
+type StockHealth = 'Stockout'|'Critical'|'Healthy'|'Overstock'|'NoSales';
+type ReportingStatus = 'OnTime'|'Late'|'NeverReported';
+type AttentionSeverity = 'Critical'|'Warning'|'Info';
+type AttentionType = 'DealerNotReporting'|'ShipmentStuck'|'OpenDiscrepancy'|'ExpiredStock'|'ProductStockout'|'PendingAdjustment'|'PendingPharmacy';
+type SalesGroupBy = 'Day'|'Week'|'Month'|'Region'|'District'|'Dealer'|'Pharmacy'|'Product';
+type StockGroupBy = 'Location'|'Region'|'Product'|'Batch';
+
+// Auth
+interface LoginRequest { phone: string; password: string; }
+interface RefreshRequest { refreshToken: string; }
+interface ChangePasswordRequest { currentPassword: string; newPassword: string; }
+interface MeDto { id: Guid; fullName: string; phone: string; role: UserRole; dealerId: Guid|null; dealerName: string|null; permissions: string[]; }
+interface AuthResponse { accessToken: string; refreshToken: string; expiresIn: number; user: MeDto; }
+
+// Users
+interface UserDto { id: Guid; fullName: string; phone: string; role: UserRole; dealerId: Guid|null; dealerName: string|null; isActive: boolean; }
+interface CreateUserRequest { fullName: string; phone: string; password: string; role: UserRole; dealerId: Guid|null; }
+interface UpdateUserRequest { fullName: string; phone: string; role: UserRole; dealerId: Guid|null; isActive: boolean; }
+interface ResetPasswordRequest { newPassword: string; }
+
+// Ma'lumotnomalar
+interface RegionDto { id: Guid; code: string|null; nameUz: string; nameRu: string; nameCyrl: string; isActive: boolean; }
+interface SaveRegionRequest { code: string|null; nameUz: string; nameRu: string; nameCyrl: string; isActive?: boolean; }
+interface DistrictDto { id: Guid; regionId: Guid; code: string|null; type: DistrictType; nameUz: string; nameRu: string; nameCyrl: string; isActive: boolean; }
+interface SaveDistrictRequest { regionId: Guid; code: string|null; type: DistrictType; nameUz: string; nameRu: string; nameCyrl: string; isActive?: boolean; }
+interface DealerDto { id: Guid; name: string; phone: string; regionId: Guid; regionName: string; districtId: Guid|null; districtName: string|null; address: string; isActive: boolean; locationId: Guid; serviceRegionIds: Guid[]; serviceDistrictIds: Guid[]; }
+interface SaveDealerRequest { name: string; phone: string; regionId: Guid; districtId: Guid|null; address: string; serviceRegionIds?: Guid[]; serviceDistrictIds?: Guid[]; isActive?: boolean; }
+interface PharmacyDto { id: Guid; name: string; regionId: Guid; regionName: string; districtId: Guid|null; districtName: string|null; address: string; phone: string|null; status: PharmacyStatus; isActive: boolean; }
+interface SavePharmacyRequest { name: string; regionId: Guid; districtId: Guid|null; address: string; phone?: string|null; isActive?: boolean; }
+interface SupplierDto { id: Guid; name: string; phone: string|null; isActive: boolean; }
+interface SaveSupplierRequest { name: string; phone: string|null; isActive?: boolean; }
+interface ManufacturerDto { id: Guid; name: string; country: string|null; isActive: boolean; }
+interface SaveManufacturerRequest { name: string; country: string|null; isActive?: boolean; }
+interface ProductDto { id: Guid; name: string; form: string; dosage: string|null; manufacturerId: Guid; manufacturerName: string; gtin: string|null; isActive: boolean; }
+interface SaveProductRequest { name: string; form: string; dosage: string|null; manufacturerId: Guid; gtin: string|null; isActive?: boolean; }
+
+// Kirim
+interface ReceiptItemRequest { productId: Guid; batchNumber: string; expiryDate: DateOnly; quantity: number; unitPrice: number; }
+interface CreateReceiptRequest { documentNumber: string; supplierId: Guid; receivedOn: DateOnly; note: string|null; items: ReceiptItemRequest[]; }
+interface ReceiptItemDto { batchId: Guid; productId: Guid; productName: string; batchNumber: string; expiryDate: DateOnly; quantity: number; unitPrice: number; }
+interface ReceiptDto { id: Guid; documentNumber: string; supplierId: Guid; supplierName: string; receivedOn: DateOnly; note: string|null; createdAt: DateTime; items: ReceiptItemDto[]; }
+interface ImportRowError { row: number; message: string; }
+
+// Qoldiq
+interface BatchDto { id: Guid; productId: Guid; productName: string; batchNumber: string; expiryDate: DateOnly; purchasePrice: number|null; }
+interface BalanceDto { locationId: Guid; locationName: string; batchId: Guid; batchNumber: string; expiryDate: DateOnly; productId: Guid; productName: string; quantity: number; }
+interface MovementDto { id: Guid; createdAt: DateTime; locationId: Guid; locationName: string; batchId: Guid; batchNumber: string; productId: Guid; productName: string; quantityDelta: number; type: MovementType; sourceId: Guid; }
+
+// Jo'natma
+interface ShipmentItemRequest { batchId: Guid; quantity: number; }
+interface CreateShipmentRequest { toDealerId: Guid|null; note: string|null; items: ShipmentItemRequest[]; }
+interface ReceiveItemRequest { itemId: Guid; receivedQuantity: number; reason: string|null; }
+interface ReceiveShipmentRequest { items: ReceiveItemRequest[]; }
+interface ResolveDiscrepancyRequest { resolution: DiscrepancyResolution; note: string|null; }
+interface ShipmentItemDto { id: Guid; batchId: Guid; batchNumber: string; expiryDate: DateOnly; productId: Guid; productName: string; sentQuantity: number; receivedQuantity: number|null; discrepancyStatus: DiscrepancyStatus; discrepancyReason: string|null; resolution: DiscrepancyResolution|null; resolutionNote: string|null; }
+interface ShipmentDto { id: Guid; number: number; fromLocationId: Guid; fromLocationName: string; toLocationId: Guid; toLocationName: string; status: ShipmentStatus; note: string|null; createdAt: DateTime; approvedAt: DateTime|null; sentAt: DateTime|null; receivedAt: DateTime|null; items: ShipmentItemDto[]; }
+
+// Sotuv
+interface SaleItemRequest { productId: Guid; quantity: number; unitPrice: number; batchId: Guid|null; }
+interface CreateSaleRequest { pharmacyId: Guid; saleDate: DateOnly; note: string|null; items: SaleItemRequest[]; }
+interface ReverseSaleRequest { reason: string; }
+interface SaleItemBatchDto { batchId: Guid; batchNumber: string; expiryDate: DateOnly; quantity: number; }
+interface SaleItemDto { id: Guid; productId: Guid; productName: string; quantity: number; unitPrice: number; amount: number; batches: SaleItemBatchDto[]; }
+interface SaleDto { id: Guid; dealerId: Guid; dealerName: string; pharmacyId: Guid; pharmacyName: string; saleDate: DateOnly; status: SaleStatus; note: string|null; reverseReason: string|null; createdAt: DateTime; totalAmount: number; items: SaleItemDto[]; }
+
+// Inventarizatsiya
+interface CreateStockCountRequest { locationId: Guid|null; }
+interface CountedItemRequest { batchId: Guid; countedQuantity: number; }
+interface CompleteStockCountRequest { items: CountedItemRequest[]; }
+interface StockCountItemDto { batchId: Guid; batchNumber: string; expiryDate: DateOnly; productId: Guid; productName: string; expectedQuantity: number; countedQuantity: number|null; difference: number|null; }
+interface StockCountDto { id: Guid; locationId: Guid; locationName: string; status: StockCountStatus; createdAt: DateTime; completedAt: DateTime|null; items: StockCountItemDto[]; }
+
+// Hisobdan chiqarish
+interface CreateAdjustmentRequest { locationId: Guid|null; batchId: Guid; type: AdjustmentType; quantity: number; reason: string; pharmacyId: Guid|null; unitPrice: number|null; }
+interface AdjustmentDto { id: Guid; locationId: Guid; locationName: string; batchId: Guid; batchNumber: string; productId: Guid; productName: string; type: AdjustmentType; quantity: number; reason: string; pharmacyId: Guid|null; pharmacyName: string|null; unitPrice: number|null; status: AdjustmentStatus; createdAt: DateTime; reviewedAt: DateTime|null; }
+
+// Ogohlantirish
+interface NotificationDto { id: Guid; type: NotificationType; message: string; entityId: Guid|null; createdAt: DateTime; isRead: boolean; }
+interface UnreadCountDto { count: number; }
+
+// Analitika
+interface AnalyticsFilter { from?: DateOnly; to?: DateOnly; regionId?: Guid; districtId?: Guid; dealerId?: Guid; productId?: Guid; }
+interface KpiDto { value: number; previousValue: number; changePercent: number|null; }
+interface DashboardKpis { salesAmount: KpiDto; salesUnits: KpiDto; grossMargin: KpiDto; marginPercent: number|null; stockUnits: number; stockValue: number; inTransitUnits: number; inTransitValue: number; daysOfStock: number|null; activeDealers: number; reportingDealers: number; expiringValue: number; expiredValue: number; writeOffValue: number; openDiscrepancies: number; }
+interface TrendPoint { date: DateOnly; amount: number; units: number; previousAmount: number; }
+interface RegionRow { regionId: Guid; name: string; nameRu: string; nameCyrl: string; salesAmount: number; salesUnits: number; sharePercent: number; changePercent: number|null; stockUnits: number; stockValue: number; daysOfStock: number|null; dealerCount: number; pharmacyCount: number; }
+interface DistrictRow { districtId: Guid; name: string; nameRu: string; nameCyrl: string; type: DistrictType; salesAmount: number; salesUnits: number; sharePercent: number; changePercent: number|null; stockUnits: number; daysOfStock: number|null; dealerCount: number; pharmacyCount: number; }
+interface ProductRow { productId: Guid; name: string; salesAmount: number; salesUnits: number; sharePercent: number; changePercent: number|null; stockUnits: number; daysOfStock: number|null; health: StockHealth; }
+interface DealerRow { dealerId: Guid; name: string; regionId: Guid; regionName: string; districtId: Guid|null; districtName: string|null; salesAmount: number; salesUnits: number; changePercent: number|null; stockUnits: number; stockValue: number|null; daysOfStock: number|null; expiringUnits: number; lastSaleDate: DateOnly|null; daysSinceLastSale: number|null; reporting: ReportingStatus; }
+interface StockDistribution { centralUnits: number; centralValue: number; dealerUnits: number; dealerValue: number; inTransitUnits: number; inTransitValue: number; }
+interface ExpiryBucket { key: 'expired'|'0-30'|'31-60'|'61-90'|'90+'; units: number; value: number; }
+interface HealthBucket { health: StockHealth; products: number; units: number; value: number; }
+interface AttentionItem { severity: AttentionSeverity; type: AttentionType; message: string; entityId: Guid|null; }
+interface DashboardDto { from: DateOnly; to: DateOnly; granularity: TrendGranularity; kpis: DashboardKpis; salesTrend: TrendPoint[]; regions: RegionRow[]; districts: DistrictRow[]; topProducts: ProductRow[]; dealers: DealerRow[]; distribution: StockDistribution; expiryBuckets: ExpiryBucket[]; stockHealth: HealthBucket[]; attention: AttentionItem[]; generatedAt: DateTime; }
+interface SalesGroupRow { key: string; label: string; units: number; amount: number; }
+interface StockGroupRow { key: string; label: string; units: number; value: number|null; }
+interface ExpiringRow { locationId: Guid; locationName: string; productId: Guid; productName: string; batchId: Guid; batchNumber: string; expiryDate: DateOnly; daysLeft: number; units: number; value: number|null; }
+interface ProductStockRow { productId: Guid; name: string; stockUnits: number; soldUnits: number; daysOfStock: number|null; health: StockHealth; }
+interface DeadStockRow { locationId: Guid; locationName: string; productId: Guid; productName: string; units: number; value: number|null; lastSaleDate: DateOnly|null; }
+interface ReconciliationRow { locationId: Guid; locationName: string; batchId: Guid; batchNumber: string; balance: number; journalTotal: number; }
+interface ReconciliationDto { isBalanced: boolean; checkedBalances: number; unitsByMovementType: Record<string, number>; mismatches: ReconciliationRow[]; }
+
+
+==================================================================
+11. ENDPOINTLAR (HAMMASI /api/v1 OSTIDA)
+==================================================================
+
+Auth
+  POST auth/login, auth/refresh, auth/logout, auth/change-password; GET auth/me
+
+Foydalanuvchilar
+  GET users; GET users/{id}; POST users; PUT users/{id}; POST users/{id}/reset-password
+
+CRUD: GET ro'yxat, GET {id}, POST, PUT {id}, DELETE {id} (faolsizlantirish):
+  regions, districts, dealers, pharmacies, products, suppliers, manufacturers
+Qo'shimcha: POST pharmacies/{id}/approve; POST pharmacies/{id}/reject
+
+Kirim
+  GET receipts; GET receipts/{id}; POST receipts; GET receipts/import/template; POST receipts/import
+
+Qoldiq
+  GET batches; GET batches/{id}; GET stock/balances; GET stock/movements
+
+Jo'natma
+  GET shipments; GET shipments/{id}; POST shipments
+  POST shipments/{id}/approve; POST shipments/{id}/send; POST shipments/{id}/cancel (tanasiz)
+  POST shipments/{id}/receive (ReceiveShipmentRequest)
+  POST shipments/{id}/items/{itemId}/resolve-discrepancy (ResolveDiscrepancyRequest)
+
+Sotuv
+  GET sales; GET sales/{id}; POST sales (Idempotency-Key); POST sales/{id}/reverse
+
+Inventarizatsiya
+  GET stock-counts; GET stock-counts/{id}; POST stock-counts; POST stock-counts/{id}/complete
+
+Hisobdan chiqarish
+  GET adjustments; GET adjustments/{id}; POST adjustments
+  POST adjustments/{id}/approve; POST adjustments/{id}/reject (tanasiz)
+
+Analitika
+  GET analytics/dashboard -> DashboardDto
+  GET analytics/summary -> DashboardKpis (web'da ishlatish shart emas)
+  GET analytics/sales?groupBy= -> SalesGroupRow[]
+  GET analytics/stock?groupBy= -> StockGroupRow[]
+  GET analytics/expiring?withinDays= -> ExpiringRow[]
+  GET analytics/days-of-stock -> ProductStockRow[]
+  GET analytics/dead-stock?days= -> DeadStockRow[]
+  GET analytics/dealers -> DealerRow[]
+  GET analytics/reconciliation -> ReconciliationDto
+  GET exports/{sales|stock|expiring|dealers} -> .xlsx (AnalyticsFilter bilan)
+
+Ogohlantirish
+  GET notifications; GET notifications/unread-count; POST notifications/{id}/read; POST notifications/read-all
+
+Faqat mobil uchun, webda ishlatma: GET sync/references. Monitoring: GET /health (/api/v1 tashqarisida).
+
+
+==================================================================
+12. XATOLARNI QAYTA ISHLASH
+==================================================================
+
+Har qanday xato application/problem+json, ApiProblem shaklida. Mantiq uchun code, foydalanuvchiga title
+(serverdan joriy tilda keladi). Bitta markaziy apiClient ApiError tashlasin (status, code, title, errors, details, traceId).
+500 xatoda traceId ni nusxalash mumkin bo'lsin. Tarmoq xatosini alohida ko'rsat ("Internet aloqasini tekshiring").
+
+Validatsiya (400 common.validation_failed): errors { maydon: [xabarlar] }.
+  Kalitlar katta-kichik harfda farq qilishi mumkin (fullName, Name, items[0].Quantity): solishtirishni
+  katta-kichik harfga e'tiborsiz va qator indeksi bilan qil, react-hook-form setError ga bog'la.
+  Mos maydon topilmasa formaning tepasida umumiy xato ko'rsat.
+  Maydon xabarlari uchala tilda keladi, lekin ichida maydonning inglizcha nomi qolishi mumkin. Shuning uchun Zod
+  qoidalarini quyida bir xil yoz va o'z tarjimangni asosiy qil. Server xabari faqat Zod o'tkazib yuborgan holatda chiqadi.
+
+Zod qoidalari (backend bilan bir xil):
+  Telefon (user, dealer): /^\+998\d{9}$/; login: bo'sh emas; parol: kamida 8
+  fullName, nomlar (dealer, pharmacy, product, supplier, manufacturer): majburiy, 200 gacha
+  region/district nameUz, nameRu, nameCyrl: majburiy, 150 gacha; code: 20 gacha
+  address: majburiy, 500 gacha; product.form: majburiy, 100 gacha; dosage: 100 gacha; gtin: /^\d{8,14}$/ yoki bo'sh (null yubor)
+  documentNumber: majburiy, 100 gacha; batchNumber: majburiy, 50 gacha; note: 1000 gacha
+  reason (reverse, adjustment), receive reason, resolve note: 500 gacha (reverse va adjustment'da majburiy)
+  quantity: butun, 0 dan katta; unitPrice: 0 yoki katta; receivedQuantity, countedQuantity: butun, 0 yoki katta
+  items: kamida bitta; sotuvda productId, jo'natma va inventarizatsiyada batchId takrorlanmasin
+
+Kodlar:
+  auth.invalid_credentials 401     auth.invalid_refresh_token 401     auth.user_inactive 403
+  auth.wrong_password 400          common.unauthorized 401            common.forbidden 403
+  common.not_found 404             common.conflict 409                common.validation_failed 400
+  common.internal_error 500        common.too_many_requests 429       common.idempotency_key_required 400
+  user.phone_taken 409             user.dealer_required 400           district.not_in_region 400
+  batch.expiry_mismatch 409        batch.expired 400                  stock.insufficient 409
+  shipment.invalid_status 409      shipment.invalid_route 400         shipment.discrepancy_not_open 409
+  shipment.receive_items_mismatch 400
+  pharmacy.not_available 400       pharmacy.not_pending 409           sale.already_reversed 409
+  sale.date_in_future 400          stock_count.not_in_progress 409    stock_count.items_mismatch 400
+  adjustment.not_pending 409       import.failed 400                  export.unknown_report 404
+
+409 "holat o'zgargan" kodlarida (shipment.invalid_status, pharmacy.not_pending, adjustment.not_pending,
+sale.already_reversed, stock_count.not_in_progress): toast ko'rsat va shu obyektni qayta yukla.
+
+
+==================================================================
+13. TIL VA FORMATLASH
+==================================================================
+
+Tillar: uz (o'zbekcha lotin, standart), uz-Cyrl (o'zbekcha krill), ru. Til tanlovida: O'zbekcha, Ўзбекча, Русский.
+Tanlov localStorage'da, Accept-Language va html lang shunga mos.
+Interfeysdagi BARCHA matn i18n kalitida bo'lsin, kodda qattiq yozilgan matn bo'lmasin.
+
+Serverdan keladigan matnlar:
+  title, regionName, districtName, locationName, attention.message, notification.message, import xatolari,
+  label va Excel fayl ichidagi matnlar so'ralgan tilda keladi. Ularni o'zing tarjima qilma.
+  RegionDto, DistrictDto: nameUz, nameRu, nameCyrl. RegionRow, DistrictRow: name (lotin), nameRu, nameCyrl.
+  Tilga mosini ko'rsat. Ma'lumotnoma formasida uchala nom ham majburiy.
+  Dori, diler, dorixona va yetkazib beruvchi nomlari foydalanuvchi kiritganicha ko'rsatiladi, tarjima yoki o'girish qilma.
+
+Enum yorliqlari (uz / ru, krillcha yorliqlar quyida alohida):
+  Admin: Administrator / Администратор; Warehouse: Omborchi / Кладовщик; Executive: Rahbar / Руководитель; Dealer: Diler / Дилер
+  District: Tuman / Район; City: Shahar / Город
+  PharmacyStatus: Pending: Tasdiq kutilmoqda / Ожидает; Active: Faol / Активна; Rejected: Rad etilgan / Отклонена
+  ShipmentStatus: Draft: Qoralama / Черновик; Approved: Tasdiqlangan / Утверждена; InTransit: Yo'lda / В пути;
+    Received: Qabul qilingan / Получена; Cancelled: Bekor qilingan / Отменена
+  DiscrepancyStatus: None: Farq yo'q / Нет; Open: Ochiq farq / Открыто; Resolved: Hal qilingan / Решено
+  DiscrepancyResolution: CorrectSender: Jo'natuvchi qoldig'ini tuzatish / Исправить остаток отправителя;
+    AcceptAsIs: Shundayligicha qabul qilish / Принять как есть
+  SaleStatus: Active: Faol / Активна; Reversed: Bekor qilingan / Отменена
+  StockCountStatus: InProgress: Jarayonda / В процессе; Completed: Yakunlangan / Завершена
+  AdjustmentType: WriteOffExpired: Muddati o'tgan / Истёк срок; WriteOffDamaged: Shikastlangan / Повреждён;
+    WriteOffOther: Boshqa / Другое; PharmacyReturn: Dorixona qaytarishi / Возврат аптеки
+  AdjustmentStatus: Pending: Kutilmoqda / Ожидает; Approved: Tasdiqlangan / Одобрено; Rejected: Rad etilgan / Отклонено
+  MovementType: Receipt: Kirim / Приход; ShipmentOut: Jo'natildi / Отправка; ShipmentIn: Qabul qilindi / Получение;
+    ShipmentCorrection: Jo'natma tuzatishi / Корректировка отправки; Sale: Sotuv / Продажа;
+    SaleReversal: Sotuv bekor qilindi / Отмена продажи; CountAdjustment: Inventarizatsiya / Инвентаризация;
+    WriteOff: Hisobdan chiqarish / Списание; PharmacyReturn: Dorixona qaytarishi / Возврат аптеки
+  StockHealth: Stockout: Tugagan / Нет в наличии; Critical: Kam qolgan / Критично; Healthy: Yetarli / Норма;
+    Overstock: Ortiqcha / Излишек; NoSales: Sotuv yo'q / Нет продаж
+  ReportingStatus: OnTime: O'z vaqtida / Вовремя; Late: Kechikkan / Опаздывает; NeverReported: Kiritmagan / Нет данных
+
+Enum yorliqlari (uz-Cyrl):
+  Admin: Администратор; Warehouse: Омборчи; Executive: Раҳбар; Dealer: Дилер
+  District: Туман; City: Шаҳар
+  PharmacyStatus: Pending: Тасдиқ кутилмоқда; Active: Фаол; Rejected: Рад этилган
+  ShipmentStatus: Draft: Қоралама; Approved: Тасдиқланган; InTransit: Йўлда; Received: Қабул қилинган; Cancelled: Бекор қилинган
+  DiscrepancyStatus: None: Фарқ йўқ; Open: Очиқ фарқ; Resolved: Ҳал қилинган
+  DiscrepancyResolution: CorrectSender: Жўнатувчи қолдиғини тузатиш; AcceptAsIs: Шундайлигича қабул қилиш
+  SaleStatus: Active: Фаол; Reversed: Бекор қилинган
+  StockCountStatus: InProgress: Жараёнда; Completed: Якунланган
+  AdjustmentType: WriteOffExpired: Муддати ўтган; WriteOffDamaged: Шикастланган; WriteOffOther: Бошқа; PharmacyReturn: Дорихона қайтариши
+  AdjustmentStatus: Pending: Кутилмоқда; Approved: Тасдиқланган; Rejected: Рад этилган
+  MovementType: Receipt: Кирим; ShipmentOut: Жўнатилди; ShipmentIn: Қабул қилинди; ShipmentCorrection: Жўнатма тузатиши;
+    Sale: Сотув; SaleReversal: Сотув бекор қилинди; CountAdjustment: Инвентаризация; WriteOff: Ҳисобдан чиқариш;
+    PharmacyReturn: Дорихона қайтариши
+  StockHealth: Stockout: Тугаган; Critical: Кам қолган; Healthy: Етарли; Overstock: Ортиқча; NoSales: Сотув йўқ
+  ReportingStatus: OnTime: Ўз вақтида; Late: Кечиккан; NeverReported: Киритмаган
+
+Status ranglari: yashil = yakunlangan yoki yaxshi; ko'k = jarayonda; sariq = e'tibor yoki kutilmoqda;
+qizil = xavf yoki rad etilgan; kulrang = qoralama yoki bekor qilingan. Faqat rangga tayanma, doim matn ham bo'lsin.
+
+Format: sana 02.11.2026, vaqt 02.11.2026 14:30, son 1 234 567, foiz 12,5%, null qiymat "—".
+Yaroqlilik muddati ko'rsatilgan joyda: o'tgan bo'lsa qizil, 30 kungacha to'q sariq, 90 kungacha sariq.
+
+
+==================================================================
+14. DIZAYN VA UX
+==================================================================
+
+Uslub: toza, ishonchli korporativ boshqaruv paneli, ko'p ma'lumotli, ortiqcha bezaksiz. Yorug' va qorong'i mavzu.
+Layout: chap yon menyu, tepada sarlavha (sahifa nomi, til, qo'ng'iroq, foydalanuvchi menyusi). Telefonda menyu yashirin.
+
+Har bir ekranda 4 holat: yuklanmoqda (skeleton), bo'sh (izoh va keyingi amal tugmasi), xato (qayta urinish), ma'lumot.
+Har bir yozish amali: tugma bosilganda bloklanadi va spinner ko'rsatadi, ikki marta yuborilmaydi; natija toast bilan;
+tegishli query invalidatsiya qilinadi. Qaytarib bo'lmaydigan amallarda (yuborish, kirim, inventarizatsiya yakuni,
+sotuvni bekor qilish, tasdiqlash, rad etish, faolsizlantirish) tasdiqlash oynasi.
+Saqlanmagan o'zgarish bor formadan chiqilganda ogohlantir.
+Katta ro'yxatli tanlash (dori, dorixona, diler) qidiruvli AsyncSelect bo'lsin.
+Klaviatura bilan to'liq ishlasin: forma qatorlarini Enter/Tab bilan qo'shish, focus ko'rinadigan, label va aria to'g'ri.
+Diler ekranlari: 360px kenglikda gorizontal aylanishsiz, tugmalar kamida 44px, raqam maydonlarida inputmode="numeric".
+
+
+==================================================================
+15. BACKENDDA YO'Q NARSALAR (BULARNI QILMA)
+==================================================================
+
+  - Ro'yxatdan o'tish, parolni tiklash, SMS, profil tahriri (faqat parol o'zgartirish bor)
+  - Audit log ekrani, joylashuvlar ro'yxati endpointi
+  - Kirim, jo'natma, sotuvni tahrirlash yoki o'chirish
+  - Dilerdan dilerga jo'natma, dorixonaga alohida jo'natma
+  - Narxnoma, to'lov va qarzdorlik, chegaralarni sozlash ekrani
+  - Serverda ustun bo'yicha tartiblash, geografik xarita ma'lumoti
+  - Real vaqt (WebSocket): yangilanish polling orqali
+  - Web uchun internetsiz rejim (u mobil ilovada)
+
+
+==================================================================
+16. ISH TARTIBI
+==================================================================
+
+Har bosqich tugagach kodni ishga tushirib tekshir va keyingisiga o't. Bosqichlarni tashlab o'tma.
+
+  1. Loyiha sozlamalari, tiplar, apiClient, sessiya va refresh, i18n, layout, ruxsatlar, himoyalangan marshrutlar, /login
+  2. Umumiy komponentlar (DataTable, AsyncSelect, ConfirmDialog, StatusBadge, MoneyText, FileDownload, RegionDistrictSelect)
+  3. Ma'lumotnomalar va foydalanuvchilar
+  4. Kirim (qo'lda va Excel), partiyalar, qoldiq, harakatlar jurnali
+  5. Jo'natmalar to'liq jarayoni va farqlarni hal qilish
+  6. Sotuvlar (idempotentlik bilan), bekor qilish, dorixona so'rovlari
+  7. Inventarizatsiya, hisobdan chiqarish
+  8. Rahbar dashboardi
+  9. Hisobotlar, eksport, ogohlantirishlar, /warehouse va /my
+  10. Testlar, README (ishga tushirish va build), Dockerfile (nginx, SPA fallback: try_files $uri /index.html)
+
+
+==================================================================
+17. QABUL QILISH MEZONLARI
+==================================================================
+
+  [ ] npm run build, npm run lint va npm test xatosiz o'tadi; any yo'q.
+  [ ] Bir vaqtda ochilgan 2 ta tabda access token eskirganda sessiya uzilmaydi va bitta refresh ketadi.
+  [ ] Bir nechta parallel 401 da bitta refresh ketadi, so'rovlar takrorlanib muvaffaqiyatli tugaydi.
+  [ ] Noto'g'ri parolda refresh chaqirilmaydi, xato xabari chiqadi.
+  [ ] Sotuv yuborilganda javob kelmasa, qayta yuborish yangi sotuv yaratmaydi (bir xil Idempotency-Key).
+  [ ] Diler ekranida kirim narxi, qoldiq qiymati va foyda hech qayerda ko'rinmaydi.
+  [ ] Executive'da yozish tugmalari yo'q; hech bir rolga 5-bo'limga zid tugma ko'rsatilmaydi.
+  [ ] To'liq oqim ishlaydi: kirim -> jo'natma yaratish -> tasdiqlash -> yuborish -> diler qabuli (farq bilan) ->
+      Admin farqni hal qiladi -> diler sotuvi -> sotuvni bekor qilish -> dashboard raqamlari o'zgaradi.
+  [ ] Dashboard filtri URL'da saqlanadi, hududga bosilganda tumanlar kesimi ochiladi.
+  [ ] Excel fayllari to'g'ri nom bilan yuklanadi; import xatolari qator raqami bilan ko'rsatiladi.
+  [ ] uz, uz-Cyrl va ru tillarida qattiq yozilgan matn qolmagan; serverdan kelgan title joriy tilda.
+  [ ] Diler ekranlari 360px da to'liq ishlaydi; dashboard 1280px da to'liq ko'rinadi.
+
+Testda majburiy: refresh mantig'i (parallel va ko'p tab), Idempotency-Key saqlanishi, jo'natma tugmalari shartlari
+(rol, holat va joylashuv kombinatsiyalari), validatsiya xatolarini maydonlarga bog'lash.
+
+Ish oxirida qisqa hisobot ber: nima qilindi, qanday ishga tushiriladi, nima tekshirildi, BACKEND_GAPS.md da nima bor.
