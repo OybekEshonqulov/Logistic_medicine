@@ -13,7 +13,7 @@ public sealed class AlertService(IAppDbContext db, IOptions<AlertOptions> alertO
     private const int SalesWindowDays = 30;
     private readonly AlertOptions _options = alertOptions.Value;
 
-    private sealed record Alert(NotificationType Type, string Message, Guid? EntityId, string DedupKey, Guid? DealerId);
+    private sealed record Alert(NotificationType Type, LocalizedText Message, Guid? EntityId, string DedupKey, Guid? DealerId);
 
     public async Task<int> RunAsync(CancellationToken ct)
     {
@@ -43,7 +43,7 @@ public sealed class AlertService(IAppDbContext db, IOptions<AlertOptions> alertO
             var recipients = users.Where(u => u.Role != UserRole.Dealer || (alert.DealerId is not null && u.DealerId == alert.DealerId));
             foreach (var user in recipients.Where(u => !existing.Contains((u.Id, alert.DedupKey))))
             {
-                db.Notifications.Add(new Notification { UserId = user.Id, Type = alert.Type, Message = alert.Message, EntityId = alert.EntityId, DedupKey = alert.DedupKey });
+                db.Notifications.Add(new Notification { UserId = user.Id, Type = alert.Type, Message = alert.Message.Uz, MessageRu = alert.Message.Ru, MessageCyrl = alert.Message.Cyrl, EntityId = alert.EntityId, DedupKey = alert.DedupKey });
                 created++;
             }
         }
@@ -65,9 +65,10 @@ public sealed class AlertService(IAppDbContext db, IOptions<AlertOptions> alertO
             var daysLeft = r.ExpiryDate.DayNumber - today.DayNumber;
             // A new alert fires each time the batch crosses into a more urgent stage.
             var stage = daysLeft switch { < 0 => "expired", <= 30 => "30", <= 60 => "60", _ => "90" };
+            var location = Texts.LocationText(r.LocationId, r.LocationName);
             var message = daysLeft < 0
-                ? $"{r.LocationName}: {r.ProductName} ({r.BatchNumber}) muddati o'tgan, {r.Quantity} dona"
-                : $"{r.LocationName}: {r.ProductName} ({r.BatchNumber}) muddati {daysLeft} kundan keyin tugaydi, {r.Quantity} dona";
+                ? Texts.BatchExpired(location, r.ProductName, r.BatchNumber, r.Quantity)
+                : Texts.BatchExpiring(location, r.ProductName, r.BatchNumber, daysLeft, r.Quantity);
             return new Alert(NotificationType.ExpiringBatch, message, r.BatchId, $"expiry:{r.LocationId}:{r.BatchId}:{stage}", r.DealerId);
         });
     }
@@ -95,7 +96,7 @@ public sealed class AlertService(IAppDbContext db, IOptions<AlertOptions> alertO
             .Where(x => x.Days < _options.LowStockDays)
             .Select(x => new Alert(
                 NotificationType.LowStock,
-                $"{dealerNames[x.s.DealerId]}: {x.s.ProductName} qoldig'i {x.Left} dona, taxminan {x.Days} kunga yetadi",
+                Texts.LowStock(dealerNames[x.s.DealerId], x.s.ProductName, x.Left, x.Days),
                 x.s.ProductId,
                 $"low:{x.s.DealerId}:{x.s.ProductId}:{weekKey}",
                 x.s.DealerId));
@@ -106,12 +107,12 @@ public sealed class AlertService(IAppDbContext db, IOptions<AlertOptions> alertO
         var before = clock.GetUtcNow().AddDays(-_options.ShipmentStuckDays);
         var stuck = await db.Shipments.AsNoTracking()
             .Where(s => s.Status == ShipmentStatus.InTransit && s.SentAt < before)
-            .Select(s => new { s.Id, s.Number, s.ToLocation.Name, s.ToLocation.DealerId })
+            .Select(s => new { s.Id, s.Number, s.ToLocationId, s.ToLocation.Name, s.ToLocation.DealerId })
             .ToListAsync(ct);
 
         return stuck.Select(s => new Alert(
             NotificationType.ShipmentNotReceived,
-            $"#{s.Number} jo'natma {s.Name} tomonidan hali qabul qilinmagan",
+            Texts.ShipmentNotReceived(s.Number, Texts.LocationText(s.ToLocationId, s.Name)),
             s.Id,
             $"shipment:{s.Id}",
             s.DealerId));
@@ -137,7 +138,7 @@ public sealed class AlertService(IAppDbContext db, IOptions<AlertOptions> alertO
             .Where(d => !last.TryGetValue(d.Id, out var date) || today.DayNumber - date.DayNumber > _options.SalesReportGraceDays)
             .Select(d => new Alert(
                 NotificationType.SalesNotReported,
-                $"{d.Name}: sotuv ma'lumoti kiritilmagan",
+                Texts.SalesNotReported(d.Name),
                 d.Id,
                 $"report:{d.Id}:{(last.TryGetValue(d.Id, out var date) ? date.ToString("yyyyMMdd") : "never")}",
                 d.Id));

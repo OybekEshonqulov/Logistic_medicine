@@ -19,7 +19,7 @@ public sealed class NotificationService(IAppDbContext db, ICurrentUser currentUs
         if (query.UnreadOnly == true) notifications = notifications.Where(n => n.ReadAt == null);
 
         return notifications.OrderByDescending(n => n.CreatedAt)
-            .Select(n => new NotificationDto(n.Id, n.Type, n.Message, n.EntityId, n.CreatedAt, n.ReadAt != null))
+            .Select(n => new NotificationDto(n.Id, n.Type, Languages.Pick(n.Message, n.MessageRu, n.MessageCyrl), n.EntityId, n.CreatedAt, n.ReadAt != null))
             .ToPagedAsync(query, ct);
     }
 

@@ -34,7 +34,7 @@ public sealed class CreateSaleRequestValidator : AbstractValidator<CreateSaleReq
         RuleFor(x => x.Items).NotEmpty();
         RuleFor(x => x.Items).Must(items => items.Select(i => i.ProductId).Distinct().Count() == items.Count)
             .When(x => x.Items is not null)
-            .WithMessage("Bir dori bir marta kiritilishi kerak");
+            .WithMessage(_ => Texts.DuplicateProduct.Current);
         RuleForEach(x => x.Items).ChildRules(item =>
         {
             item.RuleFor(i => i.ProductId).NotEmpty();

@@ -82,6 +82,7 @@ public sealed class AuthAndContractTests(ApiFactory factory)
     [Theory]
     [InlineData("ru", "Данные не найдены")]
     [InlineData("uz", "Ma'lumot topilmadi")]
+    [InlineData("uz-Cyrl", "Маълумот топилмади")]
     public async Task Error_text_follows_accept_language(string language, string expected)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/products/{Guid.NewGuid()}");
@@ -167,7 +168,7 @@ public sealed class AuthAndContractTests(ApiFactory factory)
         var page = await TestApi.GetAsync<PagedResult<DistrictDto>>(admin, $"/api/v1/districts?regionId={region.Id}&pageSize=50");
         var district = page.Items.Single(d => d.NameUz == "Sardoba tumani");
         var update = await admin.PutAsJsonAsync($"/api/v1/districts/{district.Id}",
-            new SaveDistrictRequest(region.Id, district.Code, district.Type, district.NameUz, "Изменённое имя"), TestApi.Json);
+            new SaveDistrictRequest(region.Id, district.Code, district.Type, district.NameUz, "Изменённое имя", district.NameCyrl), TestApi.Json);
         update.EnsureSuccessStatusCode();
         var before = await TestApi.GetAsync<PagedResult<DistrictDto>>(admin, "/api/v1/districts?pageSize=1");
 

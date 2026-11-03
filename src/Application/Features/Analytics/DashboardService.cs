@@ -99,7 +99,7 @@ public sealed class DashboardService(
     {
         var regions = await db.Regions.AsNoTracking()
             .Where(r => filter.RegionId == null || r.Id == filter.RegionId)
-            .Select(r => new { r.Id, r.NameUz, r.NameRu })
+            .Select(r => new { r.Id, r.NameUz, r.NameRu, r.NameCyrl })
             .ToListAsync(ct);
         var dealers = await db.Dealers.AsNoTracking().Where(d => d.IsActive).ToDictionaryAsync(d => d.Id, d => d.RegionId, ct);
         var pharmacies = await ActivePharmacyRegionsAsync(ct);
@@ -117,7 +117,7 @@ public sealed class DashboardService(
             var stockUnits = regionStock.Sum(s => s.Units);
 
             return new RegionRow(
-                region.Id, region.NameUz, region.NameRu, amount, units,
+                region.Id, region.NameUz, region.NameRu, region.NameCyrl, amount, units,
                 AnalyticsCalc.SharePercent(amount, totalAmount),
                 AnalyticsCalc.ChangePercent(amount, previous.Where(s => s.RegionId == region.Id).Sum(s => s.Amount)),
                 stockUnits, regionStock.Sum(s => s.Value),
@@ -133,7 +133,7 @@ public sealed class DashboardService(
     {
         var districts = await db.Districts.AsNoTracking()
             .Where(d => d.RegionId == regionId)
-            .Select(d => new { d.Id, d.NameUz, d.NameRu, d.Type })
+            .Select(d => new { d.Id, d.NameUz, d.NameRu, d.NameCyrl, d.Type })
             .ToListAsync(ct);
         var dealers = await db.Dealers.AsNoTracking().Where(d => d.IsActive).ToDictionaryAsync(d => d.Id, d => d.DistrictId, ct);
         var pharmacies = await ActivePharmacyRegionsAsync(ct);
@@ -150,7 +150,7 @@ public sealed class DashboardService(
             var stockUnits = stock.Where(s => s.DealerId is { } id && dealers.GetValueOrDefault(id) == district.Id).Sum(s => s.Units);
 
             return new DistrictRow(
-                district.Id, district.NameUz, district.NameRu, district.Type, amount, units,
+                district.Id, district.NameUz, district.NameRu, district.NameCyrl, district.Type, amount, units,
                 AnalyticsCalc.SharePercent(amount, totalAmount),
                 AnalyticsCalc.ChangePercent(amount, previous.Where(s => s.DistrictId == district.Id).Sum(s => s.Amount)),
                 stockUnits,
@@ -221,17 +221,17 @@ public sealed class DashboardService(
 
         items.AddRange(dealers.Where(d => d.Reporting != ReportingStatus.OnTime).Select(d => new AttentionItem(
             AttentionSeverity.Critical, AttentionType.DealerNotReporting,
-            d.DaysSinceLastSale is { } days ? $"{d.Name}: {days} kundan beri sotuv kiritmagan" : $"{d.Name}: hali sotuv kiritmagan",
+            (d.DaysSinceLastSale is { } days ? Texts.DealerSilent(d.Name, days) : Texts.DealerNeverReported(d.Name)).Current,
             d.DealerId)));
 
         items.AddRange(stock.Where(s => s.ExpiryDate < today)
             .GroupBy(s => s.LocationId)
             .Select(g => new AttentionItem(
                 AttentionSeverity.Critical, AttentionType.ExpiredStock,
-                $"{g.First().LocationName}: {g.Sum(s => s.Units)} dona muddati o'tgan dori", g.Key)));
+                Texts.ExpiredStock(Texts.LocationText(g.Key, g.First().LocationName), g.Sum(s => s.Units)).Current, g.Key)));
 
         items.AddRange(products.Where(p => p.Health == StockHealth.Stockout).Select(p => new AttentionItem(
-            AttentionSeverity.Critical, AttentionType.ProductStockout, $"{p.Name}: qoldiq tugagan", p.ProductId)));
+            AttentionSeverity.Critical, AttentionType.ProductStockout, Texts.ProductStockout(p.Name).Current, p.ProductId)));
 
         var stuckBefore = clock.GetUtcNow().AddDays(-_options.ShipmentStuckDays);
         var stuck = db.Shipments.AsNoTracking().Where(s => s.Status == ShipmentStatus.InTransit && s.SentAt < stuckBefore);
@@ -242,19 +242,19 @@ public sealed class DashboardService(
             openDiscrepancies = openDiscrepancies.Where(s => s.ToLocation.DealerId == dealerId || s.FromLocation.DealerId == dealerId);
         }
 
-        items.AddRange((await stuck.Select(s => new { s.Id, s.Number, s.ToLocation.Name }).ToListAsync(ct)).Select(s => new AttentionItem(
-            AttentionSeverity.Warning, AttentionType.ShipmentStuck, $"#{s.Number} jo'natma {s.Name} tomonidan qabul qilinmagan", s.Id)));
+        items.AddRange((await stuck.Select(s => new { s.Id, s.Number, s.ToLocationId, s.ToLocation.Name }).ToListAsync(ct)).Select(s => new AttentionItem(
+            AttentionSeverity.Warning, AttentionType.ShipmentStuck, Texts.ShipmentNotReceived(s.Number, Texts.LocationText(s.ToLocationId, s.Name)).Current, s.Id)));
 
         items.AddRange((await openDiscrepancies.Select(s => new { s.Id, s.Number }).ToListAsync(ct)).Select(s => new AttentionItem(
-            AttentionSeverity.Warning, AttentionType.OpenDiscrepancy, $"#{s.Number} jo'natmada hal qilinmagan farq bor", s.Id)));
+            AttentionSeverity.Warning, AttentionType.OpenDiscrepancy, Texts.OpenDiscrepancy(s.Number).Current, s.Id)));
 
         var pendingAdjustments = await db.StockAdjustments.AsNoTracking().CountAsync(a => a.Status == AdjustmentStatus.Pending, ct);
         if (pendingAdjustments > 0)
-            items.Add(new AttentionItem(AttentionSeverity.Info, AttentionType.PendingAdjustment, $"{pendingAdjustments} ta hisobdan chiqarish so'rovi kutmoqda", null));
+            items.Add(new AttentionItem(AttentionSeverity.Info, AttentionType.PendingAdjustment, Texts.PendingAdjustments(pendingAdjustments).Current, null));
 
         var pendingPharmacies = await db.Pharmacies.AsNoTracking().CountAsync(p => p.Status == PharmacyStatus.Pending, ct);
         if (pendingPharmacies > 0)
-            items.Add(new AttentionItem(AttentionSeverity.Info, AttentionType.PendingPharmacy, $"{pendingPharmacies} ta yangi dorixona tasdiq kutmoqda", null));
+            items.Add(new AttentionItem(AttentionSeverity.Info, AttentionType.PendingPharmacy, Texts.PendingPharmacies(pendingPharmacies).Current, null));
 
         return items.OrderBy(i => i.Severity).Take(MaxAttentionItems).ToList();
     }

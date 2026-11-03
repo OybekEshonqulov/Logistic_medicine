@@ -109,6 +109,6 @@ public sealed class AdjustmentService(
     }
 
     private static IQueryable<AdjustmentDto> Project(IQueryable<StockAdjustment> adjustments) => adjustments.Select(a => new AdjustmentDto(
-        a.Id, a.LocationId, a.Location.Name, a.BatchId, a.Batch.BatchNumber, a.Batch.ProductId, a.Batch.Product.Name,
+        a.Id, a.LocationId, Texts.LocationName(a.LocationId, a.Location.Name), a.BatchId, a.Batch.BatchNumber, a.Batch.ProductId, a.Batch.Product.Name,
         a.Type, a.Quantity, a.Reason, a.PharmacyId, a.Pharmacy != null ? a.Pharmacy.Name : null, a.UnitPrice, a.Status, a.CreatedAt, a.ReviewedAt));
 }

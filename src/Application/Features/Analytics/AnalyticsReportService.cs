@@ -39,7 +39,7 @@ public sealed class AnalyticsReportService(
         var showValue = !currentUser.IsDealer();
 
         var productNames = await db.Products.AsNoTracking().ToDictionaryAsync(p => p.Id, p => p.Name, ct);
-        var dealerRegions = await db.Dealers.AsNoTracking().Select(d => new { d.Id, d.RegionId, d.Region.NameUz }).ToDictionaryAsync(d => d.Id, ct);
+        var dealerRegions = await db.Dealers.AsNoTracking().Select(d => new { d.Id, d.RegionId, RegionName = Languages.Pick(d.Region.NameUz, d.Region.NameRu, d.Region.NameCyrl) }).ToDictionaryAsync(d => d.Id, ct);
 
         (string Key, string Label) Group(StockFact s)
         {
@@ -51,7 +51,7 @@ public sealed class AnalyticsReportService(
                     return (s.BatchId.ToString(), $"{productNames[s.ProductId]} / {s.BatchNumber}");
                 case StockGroupBy.Region when s.DealerId is { } dealerId:
                     var region = dealerRegions[dealerId];
-                    return (region.RegionId.ToString(), region.NameUz);
+                    return (region.RegionId.ToString(), region.RegionName);
                 case StockGroupBy.Region:
                     return (s.LocationId.ToString(), s.LocationName);
                 default:
@@ -151,7 +151,7 @@ public sealed class AnalyticsReportService(
         if (filter.RegionId is { } regionId) dealers = dealers.Where(d => d.RegionId == regionId);
         if (filter.DistrictId is { } districtId) dealers = dealers.Where(d => d.DistrictId == districtId);
         var rows = await dealers
-            .Select(d => new { d.Id, d.Name, d.RegionId, RegionName = d.Region.NameUz, d.DistrictId, DistrictName = d.District != null ? d.District.NameUz : null })
+            .Select(d => new { d.Id, d.Name, d.RegionId, RegionName = Languages.Pick(d.Region.NameUz, d.Region.NameRu, d.Region.NameCyrl), d.DistrictId, DistrictName = d.District != null ? Languages.Pick(d.District.NameUz, d.District.NameRu, d.District.NameCyrl) : null })
             .ToListAsync(ct);
 
         return rows
@@ -189,7 +189,7 @@ public sealed class AnalyticsReportService(
             .ToDictionaryAsync(x => (x.LocationId, x.BatchId), x => x.Total, ct);
 
         var balances = await db.StockBalances.AsNoTracking()
-            .Select(b => new { b.LocationId, LocationName = b.Location.Name, b.BatchId, b.Batch.BatchNumber, b.Quantity })
+            .Select(b => new { b.LocationId, LocationName = Texts.LocationName(b.LocationId, b.Location.Name), b.BatchId, b.Batch.BatchNumber, b.Quantity })
             .ToListAsync(ct);
 
         var byType = await db.StockMovements.AsNoTracking()
@@ -230,10 +230,10 @@ public sealed class AnalyticsReportService(
         switch (groupBy)
         {
             case SalesGroupBy.Region:
-                return await db.Regions.AsNoTracking().ToDictionaryAsync(r => r.Id.ToString(), r => r.NameUz, ct);
+                return await db.Regions.AsNoTracking().ToDictionaryAsync(r => r.Id.ToString(), r => Languages.Pick(r.NameUz, r.NameRu, r.NameCyrl), ct);
             case SalesGroupBy.District:
-                var districts = await db.Districts.AsNoTracking().ToDictionaryAsync(d => d.Id.ToString(), d => d.NameUz, ct);
-                districts[NoDistrictKey] = "Tuman ko'rsatilmagan";
+                var districts = await db.Districts.AsNoTracking().ToDictionaryAsync(d => d.Id.ToString(), d => Languages.Pick(d.NameUz, d.NameRu, d.NameCyrl), ct);
+                districts[NoDistrictKey] = Texts.NoDistrict.Current;
                 return districts;
             case SalesGroupBy.Dealer:
                 var dealerIds = sales.Select(s => s.DealerId).Distinct().ToList();

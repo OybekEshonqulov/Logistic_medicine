@@ -31,6 +31,7 @@ internal sealed class RegionConfiguration : IEntityTypeConfiguration<Region>
         b.Property(x => x.Code).HasMaxLength(20);
         b.Property(x => x.NameUz).HasMaxLength(150);
         b.Property(x => x.NameRu).HasMaxLength(150);
+        b.Property(x => x.NameCyrl).HasMaxLength(150);
         b.HasIndex(x => x.NameUz).IsUnique();
         b.HasIndex(x => x.Code).IsUnique();
     }
@@ -43,6 +44,7 @@ internal sealed class DistrictConfiguration : IEntityTypeConfiguration<District>
         b.Property(x => x.Code).HasMaxLength(20);
         b.Property(x => x.NameUz).HasMaxLength(150);
         b.Property(x => x.NameRu).HasMaxLength(150);
+        b.Property(x => x.NameCyrl).HasMaxLength(150);
         b.HasIndex(x => new { x.RegionId, x.NameUz }).IsUnique();
         b.HasIndex(x => x.Code).IsUnique();
         b.HasOne(x => x.Region).WithMany().HasForeignKey(x => x.RegionId).OnDelete(DeleteBehavior.Restrict);
@@ -289,6 +291,8 @@ internal sealed class NotificationConfiguration : IEntityTypeConfiguration<Notif
     public void Configure(EntityTypeBuilder<Notification> b)
     {
         b.Property(x => x.Message).HasMaxLength(500);
+        b.Property(x => x.MessageRu).HasMaxLength(500);
+        b.Property(x => x.MessageCyrl).HasMaxLength(500);
         b.Property(x => x.DedupKey).HasMaxLength(200);
         b.HasIndex(x => new { x.UserId, x.DedupKey }).IsUnique();
         b.HasIndex(x => new { x.UserId, x.ReadAt });

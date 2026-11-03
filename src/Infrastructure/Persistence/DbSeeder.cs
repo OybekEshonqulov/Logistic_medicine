@@ -11,8 +11,8 @@ public sealed class DbSeeder(AppDbContext db, IPasswordService passwords, IConfi
 {
     private const string RegionsResource = "PharmaTrack.Infrastructure.Persistence.Seed.regions.json";
 
-    private sealed record SeedDistrict(string? Code, DistrictType Type, string NameUz, string NameRu);
-    private sealed record SeedRegion(string Code, string NameUz, string NameRu, List<SeedDistrict> Districts);
+    private sealed record SeedDistrict(string? Code, DistrictType Type, string NameUz, string NameRu, string NameCyrl);
+    private sealed record SeedRegion(string Code, string NameUz, string NameRu, string NameCyrl, List<SeedDistrict> Districts);
 
     public async Task SeedAsync(CancellationToken ct = default)
     {
@@ -35,24 +35,34 @@ public sealed class DbSeeder(AppDbContext db, IPasswordService passwords, IConfi
         await db.SaveChangesAsync(ct);
     }
 
-    /// <summary>Adds only what is missing, so names edited by an administrator are never overwritten.</summary>
+    /// <summary>Adds only what is missing or empty, so names edited by an administrator are never overwritten.</summary>
     private async Task SeedRegionsAsync(CancellationToken ct)
     {
         var existingRegions = await db.Regions.ToDictionaryAsync(r => r.NameUz, ct);
-        var existingDistricts = await db.Districts.Select(d => new { d.RegionId, d.NameUz }).ToListAsync(ct);
-        var known = existingDistricts.Select(d => (d.RegionId, d.NameUz)).ToHashSet();
+        var existingDistricts = await db.Districts.ToDictionaryAsync(d => (d.RegionId, d.NameUz), ct);
 
         foreach (var seed in await ReadSeedAsync(ct))
         {
             if (!existingRegions.TryGetValue(seed.NameUz, out var region))
             {
-                region = new Region { Code = seed.Code, NameUz = seed.NameUz, NameRu = seed.NameRu };
+                region = new Region { Code = seed.Code, NameUz = seed.NameUz, NameRu = seed.NameRu, NameCyrl = seed.NameCyrl };
                 db.Regions.Add(region);
             }
+            else if (region.NameCyrl.Length == 0)
+            {
+                region.NameCyrl = seed.NameCyrl;
+            }
 
-            db.Districts.AddRange(seed.Districts
-                .Where(d => !known.Contains((region.Id, d.NameUz)))
-                .Select(d => new District { RegionId = region.Id, Code = d.Code, Type = d.Type, NameUz = d.NameUz, NameRu = d.NameRu }));
+            foreach (var seedDistrict in seed.Districts)
+            {
+                if (existingDistricts.TryGetValue((region.Id, seedDistrict.NameUz), out var district))
+                {
+                    if (district.NameCyrl.Length == 0) district.NameCyrl = seedDistrict.NameCyrl;
+                    continue;
+                }
+
+                db.Districts.Add(new District { RegionId = region.Id, Code = seedDistrict.Code, Type = seedDistrict.Type, NameUz = seedDistrict.NameUz, NameRu = seedDistrict.NameRu, NameCyrl = seedDistrict.NameCyrl });
+            }
         }
     }
 

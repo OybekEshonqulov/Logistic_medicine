@@ -72,7 +72,7 @@ public sealed class AnalyticsDataService(IAppDbContext db, ICurrentUser currentU
         if (filter.DistrictId is { } districtId) balances = balances.Where(b => b.Location.Dealer!.DistrictId == districtId);
 
         return await balances
-            .Select(b => new StockFact(b.LocationId, b.Location.Name, b.Location.DealerId, b.Batch.ProductId, b.BatchId, b.Batch.BatchNumber, b.Batch.ExpiryDate, b.Quantity, b.Batch.PurchasePrice))
+            .Select(b => new StockFact(b.LocationId, Texts.LocationName(b.LocationId, b.Location.Name), b.Location.DealerId, b.Batch.ProductId, b.BatchId, b.Batch.BatchNumber, b.Batch.ExpiryDate, b.Quantity, b.Batch.PurchasePrice))
             .ToListAsync(ct);
     }
 

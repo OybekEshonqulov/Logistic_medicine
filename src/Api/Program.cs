@@ -128,9 +128,9 @@ var app = builder.Build();
 // Localization comes first so that errors handled further in are translated too.
 app.UseRequestLocalization(new RequestLocalizationOptions
 {
-    DefaultRequestCulture = new RequestCulture("uz"),
-    SupportedCultures = [new CultureInfo("uz"), new CultureInfo("ru")],
-    SupportedUICultures = [new CultureInfo("uz"), new CultureInfo("ru")],
+    DefaultRequestCulture = new RequestCulture(Languages.UzbekLatin),
+    SupportedCultures = [new CultureInfo(Languages.UzbekLatin), new CultureInfo(Languages.UzbekCyrillic), new CultureInfo(Languages.Russian)],
+    SupportedUICultures = [new CultureInfo(Languages.UzbekLatin), new CultureInfo(Languages.UzbekCyrillic), new CultureInfo(Languages.Russian)],
     RequestCultureProviders = [new AcceptLanguageHeaderRequestCultureProvider()]
 });
 app.UseExceptionHandler();

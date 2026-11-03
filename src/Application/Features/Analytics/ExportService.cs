@@ -19,29 +19,29 @@ public sealed class ExportService(AnalyticsReportService reports, ISpreadsheet s
     private async Task<ExportFile> SalesAsync(AnalyticsFilter filter, CancellationToken ct)
     {
         var rows = await reports.SalesAsync(filter, SalesGroupBy.Dealer, ct);
-        return Build("sotuvlar", ["Diler", "Miqdor", "Summa"], rows.Select(r => new object?[] { r.Label, r.Units, r.Amount }));
+        return Build("sotuvlar", Texts.SalesSheet, Texts.SalesColumns, rows.Select(r => new object?[] { r.Label, r.Units, r.Amount }));
     }
 
     private async Task<ExportFile> StockAsync(AnalyticsFilter filter, CancellationToken ct)
     {
         var rows = await reports.StockAsync(filter, StockGroupBy.Batch, ct);
-        return Build("qoldiq", ["Dori / partiya", "Miqdor", "Qiymat"], rows.Select(r => new object?[] { r.Label, r.Units, r.Value }));
+        return Build("qoldiq", Texts.StockSheet, Texts.StockColumns, rows.Select(r => new object?[] { r.Label, r.Units, r.Value }));
     }
 
     private async Task<ExportFile> ExpiringAsync(AnalyticsFilter filter, CancellationToken ct)
     {
         var rows = await reports.ExpiringAsync(filter, null, ct);
-        return Build("muddati-yaqin", ["Joylashuv", "Dori", "Partiya", "Muddat", "Qolgan kun", "Miqdor", "Qiymat"],
+        return Build("muddati-yaqin", Texts.ExpiringSheet, Texts.ExpiringColumns,
             rows.Select(r => new object?[] { r.LocationName, r.ProductName, r.BatchNumber, r.ExpiryDate, r.DaysLeft, r.Units, r.Value }));
     }
 
     private async Task<ExportFile> DealersAsync(AnalyticsFilter filter, CancellationToken ct)
     {
         var rows = await reports.DealersAsync(filter, ct);
-        return Build("dilerlar", ["Diler", "Hudud", "Sotuv summasi", "Sotuv miqdori", "Qoldiq", "Zaxira (kun)", "Oxirgi sotuv"],
+        return Build("dilerlar", Texts.DealersSheet, Texts.DealersColumns,
             rows.Select(r => new object?[] { r.Name, r.RegionName, r.SalesAmount, r.SalesUnits, r.StockUnits, r.DaysOfStock, r.LastSaleDate }));
     }
 
-    private ExportFile Build(string name, IReadOnlyList<string> headers, IEnumerable<object?[]> rows) =>
-        new($"{name}.xlsx", spreadsheet.Write(name, headers, rows));
+    private ExportFile Build(string fileName, LocalizedText sheet, IEnumerable<LocalizedText> headers, IEnumerable<object?[]> rows) =>
+        new($"{fileName}.xlsx", spreadsheet.Write(sheet.Current, Texts.Current(headers), rows));
 }

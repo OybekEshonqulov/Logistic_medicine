@@ -78,7 +78,7 @@ public sealed class StockService(IAppDbContext db, ICurrentUser currentUser, Loc
 
         return await balances
             .OrderBy(b => b.Location.Name).ThenBy(b => b.Batch.Product.Name).ThenBy(b => b.Batch.ExpiryDate)
-            .Select(b => new BalanceDto(b.LocationId, b.Location.Name, b.BatchId, b.Batch.BatchNumber, b.Batch.ExpiryDate, b.Batch.ProductId, b.Batch.Product.Name, b.Quantity))
+            .Select(b => new BalanceDto(b.LocationId, Texts.LocationName(b.LocationId, b.Location.Name), b.BatchId, b.Batch.BatchNumber, b.Batch.ExpiryDate, b.Batch.ProductId, b.Batch.Product.Name, b.Quantity))
             .ToPagedAsync(query, ct);
     }
 
@@ -99,7 +99,7 @@ public sealed class StockService(IAppDbContext db, ICurrentUser currentUser, Loc
         if (query.To is { } to) movements = movements.Where(m => m.CreatedAt <= to);
 
         return await movements.OrderByDescending(m => m.CreatedAt)
-            .Select(m => new MovementDto(m.Id, m.CreatedAt, m.LocationId, m.Location.Name, m.BatchId, m.Batch.BatchNumber, m.Batch.ProductId, m.Batch.Product.Name, m.QuantityDelta, m.Type, m.SourceId))
+            .Select(m => new MovementDto(m.Id, m.CreatedAt, m.LocationId, Texts.LocationName(m.LocationId, m.Location.Name), m.BatchId, m.Batch.BatchNumber, m.Batch.ProductId, m.Batch.Product.Name, m.QuantityDelta, m.Type, m.SourceId))
             .ToPagedAsync(query, ct);
     }
 }

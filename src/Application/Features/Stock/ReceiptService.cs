@@ -40,8 +40,6 @@ public sealed class CreateReceiptRequestValidator : AbstractValidator<CreateRece
 
 public sealed class ReceiptService(IAppDbContext db, IStockLedger ledger, ISpreadsheet spreadsheet, ICurrentUser currentUser)
 {
-    private static readonly string[] ImportColumns = ["GTIN yoki dori nomi", "Partiya raqami", "Yaroqlilik muddati (YYYY-MM-DD)", "Miqdor", "Narx"];
-
     public Task<PagedResult<ReceiptDto>> ListAsync(ReceiptQuery query, CancellationToken ct)
     {
         var receipts = db.Receipts.AsNoTracking();
@@ -86,12 +84,12 @@ public sealed class ReceiptService(IAppDbContext db, IStockLedger ledger, ISprea
         return await GetAsync(receiptId, ct);
     }
 
-    public byte[] ImportTemplate() => spreadsheet.Write("Kirim", ImportColumns, []);
+    public byte[] ImportTemplate() => spreadsheet.Write(Texts.ImportSheet.Current, Texts.Current(Texts.ImportColumns), []);
 
     /// <summary>All-or-nothing: a single bad row rejects the file and every problem is reported at once.</summary>
     public async Task<ReceiptDto> ImportAsync(Stream file, string documentNumber, Guid supplierId, DateOnly receivedOn, CancellationToken ct)
     {
-        var rows = spreadsheet.Read(file, ImportColumns.Length);
+        var rows = spreadsheet.Read(file, Texts.ImportColumns.Length);
         var keys = rows.Select(r => r[0]).OfType<string>().Distinct().ToList();
         var products = await db.Products.AsNoTracking()
             .Where(p => keys.Contains(p.Name) || (p.Gtin != null && keys.Contains(p.Gtin)))
@@ -105,17 +103,17 @@ public sealed class ReceiptService(IAppDbContext db, IStockLedger ledger, ISprea
             var row = rows[i];
             var rowNumber = i + 2;
             var matches = products.Where(p => p.Gtin == row[0] || p.Name == row[0]).ToList();
-            if (matches.Count != 1) errors.Add(new ImportRowError(rowNumber, "Dori topilmadi yoki bir xil nomli dorilar bor"));
-            if (string.IsNullOrWhiteSpace(row[1])) errors.Add(new ImportRowError(rowNumber, "Partiya raqami bo'sh"));
-            if (!DateOnly.TryParse(row[2], CultureInfo.InvariantCulture, out var expiry)) errors.Add(new ImportRowError(rowNumber, "Muddat noto'g'ri"));
-            if (!int.TryParse(row[3], CultureInfo.InvariantCulture, out var quantity) || quantity <= 0) errors.Add(new ImportRowError(rowNumber, "Miqdor noto'g'ri"));
-            if (!decimal.TryParse(row[4], CultureInfo.InvariantCulture, out var price) || price < 0) errors.Add(new ImportRowError(rowNumber, "Narx noto'g'ri"));
+            if (matches.Count != 1) errors.Add(new ImportRowError(rowNumber, Texts.ImportProductNotFound.Current));
+            if (string.IsNullOrWhiteSpace(row[1])) errors.Add(new ImportRowError(rowNumber, Texts.ImportBatchEmpty.Current));
+            if (!DateOnly.TryParse(row[2], CultureInfo.InvariantCulture, out var expiry)) errors.Add(new ImportRowError(rowNumber, Texts.ImportExpiryInvalid.Current));
+            if (!int.TryParse(row[3], CultureInfo.InvariantCulture, out var quantity) || quantity <= 0) errors.Add(new ImportRowError(rowNumber, Texts.ImportQuantityInvalid.Current));
+            if (!decimal.TryParse(row[4], CultureInfo.InvariantCulture, out var price) || price < 0) errors.Add(new ImportRowError(rowNumber, Texts.ImportPriceInvalid.Current));
 
             if (errors.All(e => e.Row != rowNumber))
                 items.Add(new ReceiptItemRequest(matches[0].Id, row[1]!, expiry, quantity, price));
         }
 
-        if (rows.Count == 0) errors.Add(new ImportRowError(2, "Fayl bo'sh"));
+        if (rows.Count == 0) errors.Add(new ImportRowError(2, Texts.ImportFileEmpty.Current));
         if (errors.Count > 0) throw new DomainException(ErrorCodes.ImportFailed, errors.Cast<object>().ToArray());
 
         return await CreateAsync(new CreateReceiptRequest(documentNumber, supplierId, receivedOn, null, items), ct);

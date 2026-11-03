@@ -18,7 +18,10 @@ public sealed class Notification : Entity
 {
     public Guid UserId { get; init; }
     public NotificationType Type { get; init; }
+    /// <summary>Stored in every language because the reader's language is unknown when the alert is created.</summary>
     public required string Message { get; init; }
+    public string? MessageRu { get; init; }
+    public string? MessageCyrl { get; init; }
     public Guid? EntityId { get; init; }
     /// <summary>Prevents the alert job from sending the same alert to a user twice.</summary>
     public required string DedupKey { get; init; }

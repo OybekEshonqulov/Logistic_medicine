@@ -101,7 +101,7 @@ public sealed class DealerService(IAppDbContext db, ICurrentUser currentUser, Re
     }
 
     private IQueryable<DealerDto> Project(IQueryable<Dealer> dealers) => dealers.Select(d => new DealerDto(
-        d.Id, d.Name, d.Phone, d.RegionId, d.Region.NameUz, d.DistrictId, d.District != null ? d.District.NameUz : null, d.Address, d.IsActive,
+        d.Id, d.Name, d.Phone, d.RegionId, Languages.Pick(d.Region.NameUz, d.Region.NameRu, d.Region.NameCyrl), d.DistrictId, d.District != null ? Languages.Pick(d.District.NameUz, d.District.NameRu, d.District.NameCyrl) : null, d.Address, d.IsActive,
         db.StockLocations.Where(l => l.DealerId == d.Id).Select(l => l.Id).First(),
         d.ServiceRegions.Select(r => r.RegionId).ToList(),
         d.ServiceDistricts.Select(x => x.DistrictId).ToList()));

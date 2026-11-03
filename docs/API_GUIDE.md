@@ -8,7 +8,7 @@ To'liq ro'yxat Swagger'da: `/swagger`, klient kodi uchun `/swagger/v1/swagger.js
 |---|---|
 | Asosiy manzil | `/api/v1` |
 | Auth | `Authorization: Bearer <accessToken>` |
-| Til | `Accept-Language: uz` yoki `ru`, standart `uz` |
+| Til | `Accept-Language: uz` (lotin), `uz-Cyrl` (krill) yoki `ru`, standart `uz` |
 | Sana | `DateOnly`: `2026-11-02`; vaqt: ISO 8601 UTC |
 | Enum | Matn sifatida: `"status": "InTransit"` |
 | Identifikator | GUID |
@@ -39,7 +39,7 @@ Hamma xato bir xil ko'rinishda (`application/problem+json`). Mantiq uchun `code`
 
 `errors` faqat validatsiya xatosida (`common.validation_failed`), `details` esa qo'shimcha ma'lumot bo'lganda keladi. Masalan, Excel importida `details` xato qatorlar ro'yxati bo'ladi. Barcha kodlar: `src/Domain/Common/ErrorCodes.cs`.
 
-Validatsiya matnlari kutubxonadan keladi va `ru` tilida tarjima qilingan, o'zbekcha uchun esa inglizcha chiqadi. Foydalanuvchiga maydon xatosini klient tomonda ko'rsating yoki `common.validation_failed` matnidan foydalaning.
+Xato matnlari, ogohlantirishlar va Excel fayllari uchala tilda keladi. Hudud va tuman yozuvlarida `nameUz`, `nameRu`, `nameCyrl` bor, boshqa yozuvlardagi `regionName` va `districtName` esa so'ralgan tilda keladi. Validatsiya matnlari kutubxonadan olinadi va ichida maydonning inglizcha nomi qoladi, shuning uchun asosiy tekshiruvni klient tomonda qiling. Dori, diler va dorixona nomlari kiritilganicha ko'rsatiladi.
 
 ## Kirish
 

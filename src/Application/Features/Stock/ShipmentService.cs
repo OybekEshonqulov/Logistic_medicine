@@ -29,7 +29,7 @@ public sealed class CreateShipmentRequestValidator : AbstractValidator<CreateShi
         RuleFor(x => x.Items).NotEmpty();
         RuleFor(x => x.Items).Must(items => items.Select(i => i.BatchId).Distinct().Count() == items.Count)
             .When(x => x.Items is not null)
-            .WithMessage("Bir partiya bir marta kiritilishi kerak");
+            .WithMessage(_ => Texts.DuplicateBatch.Current);
         RuleForEach(x => x.Items).ChildRules(item =>
         {
             item.RuleFor(i => i.BatchId).NotEmpty();
@@ -226,7 +226,7 @@ public sealed class ShipmentService(
     }
 
     private static IQueryable<ShipmentDto> Project(IQueryable<Shipment> shipments) => shipments.Select(s => new ShipmentDto(
-        s.Id, s.Number, s.FromLocationId, s.FromLocation.Name, s.ToLocationId, s.ToLocation.Name, s.Status, s.Note,
+        s.Id, s.Number, s.FromLocationId, Texts.LocationName(s.FromLocationId, s.FromLocation.Name), s.ToLocationId, Texts.LocationName(s.ToLocationId, s.ToLocation.Name), s.Status, s.Note,
         s.CreatedAt, s.ApprovedAt, s.SentAt, s.ReceivedAt,
         s.Items.Select(i => new ShipmentItemDto(
             i.Id, i.BatchId, i.Batch.BatchNumber, i.Batch.ExpiryDate, i.Batch.ProductId, i.Batch.Product.Name,

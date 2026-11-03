@@ -268,6 +268,14 @@ public sealed class DashboardTests(ApiFactory factory)
         var page = await TestApi.GetAsync<PagedResult<NotificationDto>>(dealer.Client, "/api/v1/notifications?unreadOnly=true");
         Assert.Contains(page.Items, n => n.Type == NotificationType.ExpiringBatch);
 
+        foreach (var (language, phrase) in new[] { ("ru", "истекает через"), ("uz-Cyrl", "кундан кейин тугайди"), ("uz", "kundan keyin tugaydi") })
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/notifications?unreadOnly=true");
+            request.Headers.AcceptLanguage.ParseAdd(language);
+            var translated = await TestApi.ReadAsync<PagedResult<NotificationDto>>(await dealer.Client.SendAsync(request));
+            Assert.Contains(translated.Items, n => n.Type == NotificationType.ExpiringBatch && n.Message.Contains(phrase));
+        }
+
         var readAll = await dealer.Client.PostAsync("/api/v1/notifications/read-all", null);
         Assert.Equal(HttpStatusCode.NoContent, readAll.StatusCode);
         Assert.Equal(0, (await TestApi.GetAsync<UnreadCountDto>(dealer.Client, "/api/v1/notifications/unread-count")).Count);

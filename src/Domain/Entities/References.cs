@@ -9,6 +9,7 @@ public sealed class Region : Entity
     public string? Code { get; set; }
     public required string NameUz { get; set; }
     public required string NameRu { get; set; }
+    public required string NameCyrl { get; set; }
     public bool IsActive { get; set; } = true;
 }
 
@@ -21,6 +22,7 @@ public sealed class District : Entity
     public DistrictType Type { get; set; }
     public required string NameUz { get; set; }
     public required string NameRu { get; set; }
+    public required string NameCyrl { get; set; }
     public bool IsActive { get; set; } = true;
 }
 

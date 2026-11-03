@@ -25,7 +25,7 @@ public sealed class CompleteStockCountRequestValidator : AbstractValidator<Compl
         RuleFor(x => x.Items).NotEmpty();
         RuleFor(x => x.Items).Must(items => items.Select(i => i.BatchId).Distinct().Count() == items.Count)
             .When(x => x.Items is not null)
-            .WithMessage("Bir partiya bir marta kiritilishi kerak");
+            .WithMessage(_ => Texts.DuplicateBatch.Current);
         RuleForEach(x => x.Items).ChildRules(item =>
         {
             item.RuleFor(i => i.BatchId).NotEmpty();
@@ -126,7 +126,7 @@ public sealed class StockCountService(
     }
 
     private static IQueryable<StockCountDto> Project(IQueryable<StockCount> counts) => counts.Select(c => new StockCountDto(
-        c.Id, c.LocationId, c.Location.Name, c.Status, c.CreatedAt, c.CompletedAt,
+        c.Id, c.LocationId, Texts.LocationName(c.LocationId, c.Location.Name), c.Status, c.CreatedAt, c.CompletedAt,
         c.Items.Select(i => new StockCountItemDto(
             i.BatchId, i.Batch.BatchNumber, i.Batch.ExpiryDate, i.Batch.ProductId, i.Batch.Product.Name,
             i.ExpectedQuantity, i.CountedQuantity, i.CountedQuantity - i.ExpectedQuantity)).ToList()));

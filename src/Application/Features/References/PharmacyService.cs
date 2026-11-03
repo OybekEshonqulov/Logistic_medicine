@@ -113,5 +113,5 @@ public sealed class PharmacyService(IAppDbContext db, ICurrentUser currentUser, 
     }
 
     private static IQueryable<PharmacyDto> Project(IQueryable<Pharmacy> pharmacies) => pharmacies.Select(p => new PharmacyDto(
-        p.Id, p.Name, p.RegionId, p.Region.NameUz, p.DistrictId, p.District != null ? p.District.NameUz : null, p.Address, p.Phone, p.Status, p.IsActive));
+        p.Id, p.Name, p.RegionId, Languages.Pick(p.Region.NameUz, p.Region.NameRu, p.Region.NameCyrl), p.DistrictId, p.District != null ? Languages.Pick(p.District.NameUz, p.District.NameRu, p.District.NameCyrl) : null, p.Address, p.Phone, p.Status, p.IsActive));
 }

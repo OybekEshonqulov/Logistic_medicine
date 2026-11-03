@@ -23,15 +23,15 @@ public sealed class SyncService(IAppDbContext db, ICurrentUser currentUser, Time
 
         var pharmacies = await db.Pharmacies.AsNoTracking()
             .Where(p => p.UpdatedAt > since && (p.Status == PharmacyStatus.Active || p.RequestedByDealerId == dealerId))
-            .Select(p => new PharmacyDto(p.Id, p.Name, p.RegionId, p.Region.NameUz, p.DistrictId, p.District != null ? p.District.NameUz : null, p.Address, p.Phone, p.Status, p.IsActive))
+            .Select(p => new PharmacyDto(p.Id, p.Name, p.RegionId, Languages.Pick(p.Region.NameUz, p.Region.NameRu, p.Region.NameCyrl), p.DistrictId, p.District != null ? Languages.Pick(p.District.NameUz, p.District.NameRu, p.District.NameCyrl) : null, p.Address, p.Phone, p.Status, p.IsActive))
             .ToListAsync(ct);
 
         var regions = await db.Regions.AsNoTracking().Where(r => r.UpdatedAt > since)
-            .Select(r => new RegionDto(r.Id, r.Code, r.NameUz, r.NameRu, r.IsActive))
+            .Select(r => new RegionDto(r.Id, r.Code, r.NameUz, r.NameRu, r.NameCyrl, r.IsActive))
             .ToListAsync(ct);
 
         var districts = await db.Districts.AsNoTracking().Where(d => d.UpdatedAt > since)
-            .Select(d => new DistrictDto(d.Id, d.RegionId, d.Code, d.Type, d.NameUz, d.NameRu, d.IsActive))
+            .Select(d => new DistrictDto(d.Id, d.RegionId, d.Code, d.Type, d.NameUz, d.NameRu, d.NameCyrl, d.IsActive))
             .ToListAsync(ct);
 
         var stock = await db.StockBalances.AsNoTracking()

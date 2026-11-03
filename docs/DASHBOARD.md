@@ -19,7 +19,7 @@ Filtrlarning hammasi ixtiyoriy, standart davr oxirgi 30 kun. `regionId` tanlansa
 | Dilerlar intizomi | `kpis.activeDealers`, `reportingDealers` | Nechta diler o'z vaqtida sotuv kiritgan |
 | Yo'qotish xavfi | `kpis.expiringValue`, `expiredValue`, `writeOffValue`, `openDiscrepancies` | Pul ko'rinishidagi xavf |
 | Sotuv grafigi | `salesTrend[]`, `granularity` | `amount`, `units`, `previousAmount`; davrga qarab kun, hafta yoki oy |
-| Hududlar xaritasi yoki reytingi | `regions[]` | Viloyat bo'yicha sotuv, ulush, o'sish, qoldiq, zaxira kuni, diler va dorixona soni |
+| Hududlar xaritasi yoki reytingi | `regions[]` (`name`, `nameRu`, `nameCyrl`) | Viloyat bo'yicha sotuv, ulush, o'sish, qoldiq, zaxira kuni, diler va dorixona soni |
 | Tumanlar kesimi | `districts[]` | Hudud tanlanganda: har bir tuman va shahar bo'yicha sotuv, ulush, o'sish, qoldiq |
 | Top dorilar | `topProducts[]` | Eng ko'p sotilgan 10 ta dori va holati |
 | Dilerlar jadvali | `dealers[]` | Sotuv, o'sish, qoldiq, zaxira, oxirgi sotuv, `reporting` holati |

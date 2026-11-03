@@ -57,8 +57,8 @@ public sealed record DashboardKpis(
     decimal WriteOffValue,
     int OpenDiscrepancies);
 public sealed record TrendPoint(DateOnly Date, decimal Amount, int Units, decimal PreviousAmount);
-public sealed record RegionRow(Guid RegionId, string Name, string NameRu, decimal SalesAmount, int SalesUnits, decimal SharePercent, decimal? ChangePercent, int StockUnits, decimal StockValue, decimal? DaysOfStock, int DealerCount, int PharmacyCount);
-public sealed record DistrictRow(Guid DistrictId, string Name, string NameRu, DistrictType Type, decimal SalesAmount, int SalesUnits, decimal SharePercent, decimal? ChangePercent, int StockUnits, decimal? DaysOfStock, int DealerCount, int PharmacyCount);
+public sealed record RegionRow(Guid RegionId, string Name, string NameRu, string NameCyrl, decimal SalesAmount, int SalesUnits, decimal SharePercent, decimal? ChangePercent, int StockUnits, decimal StockValue, decimal? DaysOfStock, int DealerCount, int PharmacyCount);
+public sealed record DistrictRow(Guid DistrictId, string Name, string NameRu, string NameCyrl, DistrictType Type, decimal SalesAmount, int SalesUnits, decimal SharePercent, decimal? ChangePercent, int StockUnits, decimal? DaysOfStock, int DealerCount, int PharmacyCount);
 public sealed record ProductRow(Guid ProductId, string Name, decimal SalesAmount, int SalesUnits, decimal SharePercent, decimal? ChangePercent, int StockUnits, decimal? DaysOfStock, StockHealth Health);
 public sealed record DealerRow(Guid DealerId, string Name, Guid RegionId, string RegionName, Guid? DistrictId, string? DistrictName, decimal SalesAmount, int SalesUnits, decimal? ChangePercent, int StockUnits, decimal? StockValue, decimal? DaysOfStock, int ExpiringUnits, DateOnly? LastSaleDate, int? DaysSinceLastSale, ReportingStatus Reporting);
 public sealed record StockDistribution(int CentralUnits, decimal CentralValue, int DealerUnits, decimal DealerValue, int InTransitUnits, decimal InTransitValue);

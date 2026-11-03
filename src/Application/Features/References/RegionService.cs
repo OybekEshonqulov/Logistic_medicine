@@ -7,10 +7,10 @@ using PharmaTrack.Domain.Enums;
 
 namespace PharmaTrack.Application.Features.References;
 
-public sealed record RegionDto(Guid Id, string? Code, string NameUz, string NameRu, bool IsActive);
-public sealed record SaveRegionRequest(string? Code, string NameUz, string NameRu, bool IsActive = true);
-public sealed record DistrictDto(Guid Id, Guid RegionId, string? Code, DistrictType Type, string NameUz, string NameRu, bool IsActive);
-public sealed record SaveDistrictRequest(Guid RegionId, string? Code, DistrictType Type, string NameUz, string NameRu, bool IsActive = true);
+public sealed record RegionDto(Guid Id, string? Code, string NameUz, string NameRu, string NameCyrl, bool IsActive);
+public sealed record SaveRegionRequest(string? Code, string NameUz, string NameRu, string NameCyrl, bool IsActive = true);
+public sealed record DistrictDto(Guid Id, Guid RegionId, string? Code, DistrictType Type, string NameUz, string NameRu, string NameCyrl, bool IsActive);
+public sealed record SaveDistrictRequest(Guid RegionId, string? Code, DistrictType Type, string NameUz, string NameRu, string NameCyrl, bool IsActive = true);
 public sealed record DistrictQuery : PageQuery
 {
     public Guid? RegionId { get; init; }
@@ -24,6 +24,7 @@ public sealed class SaveRegionRequestValidator : AbstractValidator<SaveRegionReq
         RuleFor(x => x.Code).MaximumLength(20);
         RuleFor(x => x.NameUz).NotEmpty().MaximumLength(150);
         RuleFor(x => x.NameRu).NotEmpty().MaximumLength(150);
+        RuleFor(x => x.NameCyrl).NotEmpty().MaximumLength(150);
     }
 }
 
@@ -36,6 +37,7 @@ public sealed class SaveDistrictRequestValidator : AbstractValidator<SaveDistric
         RuleFor(x => x.Type).IsInEnum();
         RuleFor(x => x.NameUz).NotEmpty().MaximumLength(150);
         RuleFor(x => x.NameRu).NotEmpty().MaximumLength(150);
+        RuleFor(x => x.NameCyrl).NotEmpty().MaximumLength(150);
     }
 }
 
@@ -47,11 +49,11 @@ public sealed class RegionService(IAppDbContext db)
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             var search = query.Search.ToLower();
-            regions = regions.Where(r => r.NameUz.ToLower().Contains(search) || r.NameRu.ToLower().Contains(search));
+            regions = regions.Where(r => r.NameUz.ToLower().Contains(search) || r.NameRu.ToLower().Contains(search) || r.NameCyrl.ToLower().Contains(search));
         }
 
         return regions.OrderBy(r => r.NameUz)
-            .Select(r => new RegionDto(r.Id, r.Code, r.NameUz, r.NameRu, r.IsActive))
+            .Select(r => new RegionDto(r.Id, r.Code, r.NameUz, r.NameRu, r.NameCyrl, r.IsActive))
             .ToPagedAsync(query, ct);
     }
 
@@ -60,7 +62,7 @@ public sealed class RegionService(IAppDbContext db)
 
     public async Task<RegionDto> CreateAsync(SaveRegionRequest request, CancellationToken ct)
     {
-        var region = new Region { Code = request.Code, NameUz = request.NameUz, NameRu = request.NameRu, IsActive = request.IsActive };
+        var region = new Region { Code = request.Code, NameUz = request.NameUz, NameRu = request.NameRu, NameCyrl = request.NameCyrl, IsActive = request.IsActive };
         db.Regions.Add(region);
         await db.SaveChangesAsync(ct);
         return ToDto(region);
@@ -72,6 +74,7 @@ public sealed class RegionService(IAppDbContext db)
         region.Code = request.Code;
         region.NameUz = request.NameUz;
         region.NameRu = request.NameRu;
+        region.NameCyrl = request.NameCyrl;
         region.IsActive = request.IsActive;
         await db.SaveChangesAsync(ct);
         return ToDto(region);
@@ -92,7 +95,7 @@ public sealed class RegionService(IAppDbContext db)
             throw new DomainException(ErrorCodes.DistrictNotInRegion);
     }
 
-    private static RegionDto ToDto(Region r) => new(r.Id, r.Code, r.NameUz, r.NameRu, r.IsActive);
+    private static RegionDto ToDto(Region r) => new(r.Id, r.Code, r.NameUz, r.NameRu, r.NameCyrl, r.IsActive);
 }
 
 public sealed class DistrictService(IAppDbContext db)
@@ -105,11 +108,11 @@ public sealed class DistrictService(IAppDbContext db)
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             var search = query.Search.ToLower();
-            districts = districts.Where(d => d.NameUz.ToLower().Contains(search) || d.NameRu.ToLower().Contains(search));
+            districts = districts.Where(d => d.NameUz.ToLower().Contains(search) || d.NameRu.ToLower().Contains(search) || d.NameCyrl.ToLower().Contains(search));
         }
 
         return districts.OrderBy(d => d.NameUz)
-            .Select(d => new DistrictDto(d.Id, d.RegionId, d.Code, d.Type, d.NameUz, d.NameRu, d.IsActive))
+            .Select(d => new DistrictDto(d.Id, d.RegionId, d.Code, d.Type, d.NameUz, d.NameRu, d.NameCyrl, d.IsActive))
             .ToPagedAsync(query, ct);
     }
 
@@ -119,7 +122,7 @@ public sealed class DistrictService(IAppDbContext db)
     public async Task<DistrictDto> CreateAsync(SaveDistrictRequest request, CancellationToken ct)
     {
         await db.Regions.Where(r => r.Id == request.RegionId).FirstOrNotFoundAsync(ct);
-        var district = new District { RegionId = request.RegionId, Code = request.Code, Type = request.Type, NameUz = request.NameUz, NameRu = request.NameRu, IsActive = request.IsActive };
+        var district = new District { RegionId = request.RegionId, Code = request.Code, Type = request.Type, NameUz = request.NameUz, NameRu = request.NameRu, NameCyrl = request.NameCyrl, IsActive = request.IsActive };
         db.Districts.Add(district);
         await db.SaveChangesAsync(ct);
         return ToDto(district);
@@ -135,6 +138,7 @@ public sealed class DistrictService(IAppDbContext db)
         district.Type = request.Type;
         district.NameUz = request.NameUz;
         district.NameRu = request.NameRu;
+        district.NameCyrl = request.NameCyrl;
         district.IsActive = request.IsActive;
         await db.SaveChangesAsync(ct);
         return ToDto(district);
@@ -147,5 +151,5 @@ public sealed class DistrictService(IAppDbContext db)
         await db.SaveChangesAsync(ct);
     }
 
-    private static DistrictDto ToDto(District d) => new(d.Id, d.RegionId, d.Code, d.Type, d.NameUz, d.NameRu, d.IsActive);
+    private static DistrictDto ToDto(District d) => new(d.Id, d.RegionId, d.Code, d.Type, d.NameUz, d.NameRu, d.NameCyrl, d.IsActive);
 }

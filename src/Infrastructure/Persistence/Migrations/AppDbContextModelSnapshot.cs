@@ -233,6 +233,12 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
 
+                    b.Property<string>("NameCyrl")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("name_cyrl");
+
                     b.Property<string>("NameRu")
                         .IsRequired()
                         .HasMaxLength(150)
@@ -335,6 +341,16 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")
                         .HasColumnName("message");
+
+                    b.Property<string>("MessageCyrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("message_cyrl");
+
+                    b.Property<string>("MessageRu")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("message_ru");
 
                     b.Property<DateTimeOffset?>("ReadAt")
                         .HasColumnType("timestamp with time zone")
@@ -651,6 +667,12 @@ namespace PharmaTrack.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
+
+                    b.Property<string>("NameCyrl")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("name_cyrl");
 
                     b.Property<string>("NameRu")
                         .IsRequired()
