@@ -1,10 +1,12 @@
 using System.Globalization;
+using System.Net;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.AspNetCore.RateLimiting;
@@ -27,6 +29,15 @@ builder.Host.UseSerilog((context, logger) => logger.ReadFrom.Configuration(conte
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.ForwardLimit = 1;
+    // Trust only the configured Docker gateway used by the host Caddy proxy.
+    var proxy = builder.Configuration["ReverseProxy:KnownProxy"];
+    if (!string.IsNullOrWhiteSpace(proxy))
+        options.KnownProxies.Add(IPAddress.Parse(proxy));
+});
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.Configure<AlertOptions>(builder.Configuration.GetSection(AlertOptions.Section));
 builder.Services.AddHostedService<AlertsBackgroundService>();
@@ -124,6 +135,7 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 var app = builder.Build();
+app.UseForwardedHeaders();
 
 // Localization comes first so that errors handled further in are translated too.
 app.UseRequestLocalization(new RequestLocalizationOptions

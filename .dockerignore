@@ -1,0 +1,11 @@
+.git
+.github
+.deploy-local
+**/bin
+**/obj
+**/.env
+**/.env.*
+**/secrets
+**/TestResults
+deploy
+tests

@@ -480,3 +480,8 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Local deployment credentials and artifacts
+.deploy-local/
+deploy/secrets/
+release.env

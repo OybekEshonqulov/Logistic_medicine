@@ -1,13 +1,22 @@
-name: CI
+name: CI and production deploy
 
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pharmatrack-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:17
@@ -28,3 +37,25 @@ jobs:
       - run: dotnet test PharmaTrack.sln
         env:
           TEST_DB_CONNECTION: Host=localhost;Port=5432;Username=postgres;Password=postgres
+      - name: Build production image
+        run: docker build -t "pharmatrack-api:release-$GITHUB_SHA" .
+      - name: Deploy verified release
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.PRODUCTION_DEPLOY_ENABLED == 'true'
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_SSH_KEY" && test -n "$DEPLOY_KNOWN_HOSTS"
+          umask 077
+          key="$RUNNER_TEMP/pharmatrack-key"
+          hosts="$RUNNER_TEMP/pharmatrack-hosts"
+          trap 'rm -f "$key" "$hosts"' EXIT
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$key"
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$hosts"
+          docker save "pharmatrack-api:release-$GITHUB_SHA" | gzip -1 | \
+            ssh -T -i "$key" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+              -o UserKnownHostsFile="$hosts" -o ConnectTimeout=20 \
+              -o ServerAliveInterval=30 -o ServerAliveCountMax=6 \
+              deploy@169.58.234.231 "deploy $GITHUB_SHA"

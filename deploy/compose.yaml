@@ -1,0 +1,41 @@
+name: pharmatrack
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    env_file: ./secrets/db.env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U pharmatrack -d pharmatrack']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [backend]
+    logging: &logging
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+  api:
+    image: ${PHARMATRACK_IMAGE:?Set PHARMATRACK_IMAGE}
+    restart: unless-stopped
+    env_file: ./secrets/api.env
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ReverseProxy__KnownProxy: 172.30.89.1
+    ports: ['127.0.0.1:3300:8080']
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [backend]
+    logging: *logging
+networks:
+  backend:
+    ipam:
+      config:
+        - subnet: 172.30.89.0/24
+          gateway: 172.30.89.1
+volumes:
+  pgdata:
